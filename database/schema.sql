@@ -179,12 +179,11 @@ SELECT
     v.name AS venue_name,
     v.venue_type,
     v.location,
-    v.building,
+    v.description,
     b.booking_date,
     b.start_time,
     b.end_time,
     b.status,
-    b.organizer_name,
     c.name AS club_name,
     b.created_at
 FROM bookings b
@@ -200,12 +199,11 @@ SELECT
     v.name AS venue_name,
     v.venue_type,
     v.location,
-    v.capacity,
     COUNT(b.id) FILTER (WHERE b.booking_date >= CURRENT_DATE AND b.status = 'confirmed') AS upcoming_bookings
 FROM venues v
 LEFT JOIN bookings b ON v.id = b.venue_id
 WHERE v.is_active = true AND v.booking_allowed = true
-GROUP BY v.id, v.name, v.venue_type, v.location, v.capacity;
+GROUP BY v.id, v.name, v.venue_type, v.location;
 
 -- View for booking details with all related information
 CREATE VIEW booking_details AS
@@ -213,13 +211,9 @@ SELECT
     b.id,
     b.event_name,
     b.event_description,
-    b.organizer_name,
-    b.organizer_email,
-    b.organizer_phone,
     v.name AS venue_name,
     v.venue_type,
     v.location,
-    v.capacity,
     b.booking_date,
     b.start_time,
     b.end_time,
@@ -247,8 +241,7 @@ LEFT JOIN users approver ON b.approved_by = approver.id
 LEFT JOIN booking_items bi ON b.id = bi.booking_id
 LEFT JOIN venue_items vi ON bi.venue_item_id = vi.id
 GROUP BY 
-    b.id, b.event_name, b.event_description, b.organizer_name, b.organizer_email,
-    b.organizer_phone, v.name, v.venue_type, v.location, v.capacity,
+    b.id, b.event_name, b.event_description, v.name, v.venue_type, v.location,
     b.booking_date, b.start_time, b.end_time, b.status,
     c.name, creator.user_name, creator.email, approver.user_name,
     b.approved_at, b.special_requirements, b.created_at, b.updated_at;
@@ -266,4 +259,3 @@ ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
 ALTER TABLE venue_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE booking_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE booking_audit_log ENABLE ROW LEVEL SECURITY;

@@ -19,10 +19,10 @@ INSERT INTO venues (name, venue_type, location, description) VALUES
 ('Conference Room', 'classroom', 'Admin Block', 'Small conference room for meetings');
 
 -- Insert sample clubs
-INSERT INTO clubs (name, description, email) VALUES
-('ACM Student Chapter', 'Association for Computing Machinery student chapter', 'acm@sgce.org'),
-('Coding Club', 'Institutional coding club', 'code@sgce.org'),
-('Tech Club', 'Technology and innovation club', 'tech@sgce.org');
+INSERT INTO clubs (name, description) VALUES
+('ACM Student Chapter', 'Association for Computing Machinery student chapter'),
+('Coding Club', 'Institutional coding club'),
+('Tech Club', 'Technology and innovation club');
 
 -- Insert sample venue items
 INSERT INTO venue_items (venue_id, item_name, quantity, description) 
