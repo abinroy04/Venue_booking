@@ -6,45 +6,6 @@ A comprehensive venue booking management system designed for educational institu
 
 This system digitizes the venue booking process while maintaining institutional approval protocols. It provides read-only calendar access to students while giving authorized personnel (HOD/PRO) full booking control with conflict detection and audit logging.
 
-## ✨ Features
-
-### Core Functionality
-- 📅 **Centralized Calendar** - Unified digital calendar for all venues
-- 🔍 **Availability Check** - Real-time venue availability lookup
-- 🚫 **Conflict Prevention** - Automatic detection of booking overlaps
-- 📝 **Approval Workflow** - Multi-stage approval process (Pending → Approved → Confirmed)
-- 🔒 **Role-Based Access** - Different permissions for students, HOD, Principal, and PRO
-- 📦 **Venue Items Booking** - Book venue components (microphones, projectors, etc.)
-- 📊 **Audit Logging** - Complete history of all booking actions
-- 🏢 **Club Management** - Centralized club and coordinator database
-
-### User Roles
-- **Student** - View-only access to confirmed bookings
-- **HOD (Head of Department)** - Create booking requests and approve events
-- **Principal** - Approve booking requests
-- **PRO (Public Relations Officer)** - Full booking control, final confirmation power
-- **Admin** - Complete system access
-
-## 🏗️ Architecture
-
-### Technology Stack
-- **Database**: PostgreSQL (via Supabase)
-- **Backend**: Python (Flask/FastAPI recommended)
-- **Authentication**: Supabase Auth
-- **Storage**: Supabase Storage (for approval letters)
-- **Security**: Row Level Security (RLS) policies
-
-### Database Schema
-The system uses 8 main tables:
-- `users` - User accounts with role-based access
-- `venues` - Venue information and properties
-- `venue_items` - Bookable items within venues
-- `bookings` - Main booking records
-- `booking_items` - Junction table for booked items
-- `clubs` - Club/organization information
-- `club_coordinators` - Club-user relationships
-- `booking_audit_log` - Complete audit trail
-
 ## 📁 Project Structure
 
 ```
