@@ -68,8 +68,8 @@ def internal_error(error):
 if __name__ == '__main__':
 
     # Configuration
-    port = int(os.getenv('APP_PORT'))
-    host = os.getenv('APP_HOST')
+    port = int(os.getenv('APP_PORT', 5000))
+    host = os.getenv('APP_HOST', '0.0.0.0')
     debug_mode = os.getenv('APP_ENV') == 'development'
     
     # Run the app with auto-reload enabled in debug mode
