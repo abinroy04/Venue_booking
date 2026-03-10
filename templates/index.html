@@ -7,3 +7,46 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
 {% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-2xl font-bold mb-4">Venue Bookings Calendar</h2>
+    <div id="calendar" class="bg-white p-4 rounded-lg shadow"></div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('calendar');
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',  // Shows current month by default
+            events: [
+                // Add your events here, e.g.:
+                {
+                    title: 'Sample Event 1',
+                    start: '2026-03-15T10:00:00',
+                    end: '2026-03-15T12:00:00'
+                },
+                {
+                    title: 'Sample Event 2',
+                    start: '2026-03-20T14:00:00',
+                    end: '2026-03-20T16:00:00'
+                }
+            ],
+            headerToolbar: {
+                left: 'prev,next today',  // Buttons for navigating to previous/next months and jumping to today
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'  // View options
+            },
+            navLinks: true,  // Allows clicking on dates to navigate to day view
+            selectable: false,
+            nowIndicator: true,
+            eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            height: 'auto'
+        });
+        calendar.render();
+    });
+</script>
+{% endblock %}
