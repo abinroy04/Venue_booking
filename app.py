@@ -8,6 +8,13 @@ from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
 from functools import wraps
+import requests
+
+try:
+    r = requests.get("https://google.com")
+    print("Internet OK:", r.status_code)
+except Exception as e:
+    print("Internet FAIL:", e)
 
 # ==================== Load Environment ====================
 load_dotenv()
@@ -24,6 +31,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ ERROR: Missing SUPABASE_URL or SUPABASE_ANON_KEY")
     exit(1)
 
+print("SUPABASE_URL:", SUPABASE_URL)
+print("SUPABASE_KEY:", SUPABASE_KEY[:10] if SUPABASE_KEY else None)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==================== Auth Decorator ====================
@@ -49,21 +58,22 @@ def signup():
                 "password": password
             })
 
+            print("FULL RESPONSE:", response)
+
             if response.user:
-                # Insert into custom users table
                 supabase.table("users").insert({
                     "id": response.user.id,
-                    "email": response.user.email
-                    
+                    "email": response.user.email,
+                    "name": name
                 }).execute()
 
                 return "✅ Signup successful! Please login."
 
-            return "❌ Signup failed"
+            return "⚠️ Signup done, check email"
 
         except Exception as e:
-            print("ERROR:", e)
-            return "Signup error occurred"
+            print("ERROR DETAILS:", e)
+            return f"❌ Error: {str(e)}"   # 🔥 SHOW ERROR IN BROWSER
 
     return render_template("signup.html")
 
