@@ -257,6 +257,18 @@ Get detailed information for a specific booking.
 
 Create a new booking request.
 
+**Required Fields**:
+1. Event Title
+2. Description
+3. Faculty Coordinator Name
+4. Faculty Coordinator Phone Number
+5. Event Type (Department / College)
+6. Event Date (Start and End Date/Time)
+7. Associated Club
+8. Venue
+9. Venue Amenities
+10. Approved Letter Upload
+
 **Headers**:
 ```
 Authorization: Bearer <token>
@@ -265,21 +277,26 @@ Content-Type: multipart/form-data
 
 **Request Body** (form-data):
 ```
-event_name: Tech Workshop 2026
-event_description: Annual coding and innovation workshop
-venue_id: venue-uuid
-booking_date: 2026-03-20
+event_title: Tech Workshop 2026
+description: Annual coding and innovation workshop
+faculty_coordinator_name: Dr. Jane Smith
+faculty_coordinator_phone_number: 9876543210
+event_type: department
+start_date: 2026-03-20
 start_time: 14:00
+end_date: 2026-03-20
 end_time: 17:00
-club_id: club-uuid
-coordinator_id: user-uuid (club coordinator)
-organizer_name: Jane Smith
-organizer_email: jane@institution.edu
-organizer_phone: 9876543210
-expected_attendees: 50
-special_requirements: Need sound system setup by 1:30 PM
+associated_club_id: club-uuid
+venue_id: venue-uuid
+venue_amenities: projector, sound_system
 venue_items: [{"item_id": "uuid1", "quantity": 2}, {"item_id": "uuid2", "quantity": 1}]
 approval_document: <file> (PDF/Image)
+
+**Dropdown Values**:
+- `event_type`: `department` or `college`
+- `associated_club_id`: Club UUID selected from Clubs dropdown
+- `venue_id`: Venue UUID selected from Venue dropdown
+- `venue_amenities`: Selected amenity values from Venue Amenities dropdown
 ```
 
 **Response** (201 Created):
@@ -289,9 +306,13 @@ approval_document: <file> (PDF/Image)
   "message": "Booking request created successfully",
   "data": {
     "id": "new-booking-uuid",
-    "event_name": "Tech Workshop 2026",
+    "event_title": "Tech Workshop 2026",
+    "event_type": "department",
     "status": "pending",
-    "booking_date": "2026-03-20",
+    "start_date": "2026-03-20",
+    "start_time": "14:00:00",
+    "end_date": "2026-03-20",
+    "end_time": "17:00:00",
     "venue": {
       "name": "Main Seminar Hall"
     },
@@ -725,6 +746,68 @@ Get list of all active venues.
 
 ---
 
+### Create Venue
+**POST** `/venues`
+
+Create a new venue.
+
+**Headers**:
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Required Fields**:
+1. Venue name
+2. Venue type (dropdown UUID)
+3. Location
+4. Description
+
+**Request Body**:
+```json
+{
+  "venue_name": "Innovation Hall",
+  "venue_type_id": "6f25d4a8-9c3d-4f63-8ea8-96eec7f5fca2",
+  "location": "Academic Block C, Floor 2",
+  "description": "Large hall for department and college-level events"
+}
+```
+
+**Field Notes**:
+- `venue_type_id`: UUID selected from Venue Type dropdown.
+- `venue_name`: Must be unique within active venues.
+
+**Response** (201 Created):
+```json
+{
+  "success": true,
+  "message": "Venue created successfully",
+  "data": {
+    "id": "venue-uuid-3",
+    "name": "Innovation Hall",
+    "venue_type_id": "6f25d4a8-9c3d-4f63-8ea8-96eec7f5fca2",
+    "location": "Academic Block C, Floor 2",
+    "description": "Large hall for department and college-level events",
+    "is_active": true,
+    "booking_allowed": true,
+    "created_at": "2026-03-26T10:15:00Z"
+  }
+}
+```
+
+**Error** (400 Bad Request):
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Missing required fields: venue_name, venue_type_id"
+  }
+}
+```
+
+---
+
 ### Get Venue by ID
 **GET** `/venues/:id`
 
@@ -847,43 +930,52 @@ Get list of all active clubs.
 
 ---
 
-### Get Club Coordinators
-**GET** `/clubs/:id/coordinators`
+### Create Club
+**POST** `/clubs`
 
-Get list of coordinators for a specific club.
+Create a new club.
 
-**Response** (200 OK):
+**Headers**:
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Required Fields**:
+1. Club name
+2. Description
+
+**Request Body**:
+```json
+{
+  "name": "Innovation Club",
+  "description": "Club focused on product innovation and startup activities"
+}
+```
+
+**Response** (201 Created):
 ```json
 {
   "success": true,
-  "data": [
-    {
-      "id": "coordinator-uuid-1",
-      "user": {
-        "id": "user-uuid",
-        "full_name": "John Doe",
-        "email": "john@institution.edu",
-        "phone": "9876543210"
-      },
-      "role": "president",
-      "assigned_from": "2026-01-01",
-      "assigned_until": "2026-12-31",
-      "is_active": true
-    },
-    {
-      "id": "coordinator-uuid-2",
-      "user": {
-        "id": "user-uuid-2",
-        "full_name": "Jane Smith",
-        "email": "jane@institution.edu",
-        "phone": "9876543211"
-      },
-      "role": "coordinator",
-      "assigned_from": "2026-01-01",
-      "assigned_until": "2026-12-31",
-      "is_active": true
-    }
-  ]
+  "message": "Club created successfully",
+  "data": {
+    "id": "club-uuid-3",
+    "name": "Innovation Club",
+    "description": "Club focused on product innovation and startup activities",
+    "is_active": true,
+    "created_at": "2026-03-26T11:20:00Z"
+  }
+}
+```
+
+**Error** (400 Bad Request):
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_INPUT",
+    "message": "Missing required fields: name, description"
+  }
 }
 ```
 
