@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Login | Venue Booking System</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="h-screen flex">
+
+<!-- Left Side (Image Section) -->
+<div class="hidden md:flex w-1/2 bg-cover bg-center"
+     style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c');">
+</div>
+
+<!-- Right Side (Login Form) -->
+<div class="w-full md:w-1/2 flex items-center justify-center bg-gray-100">
+
+    <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+
+        <h2 class="text-3xl font-bold mb-2 text-center">
+            Venue Booking System
+        </h2>
+
+        <p class="text-gray-500 mb-6 text-center">
+            Sign in to your account
+        </p>
+
+        <form method="POST" action="/login">
+
+            <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                required
+                class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                required
+                    class="w-full p-3 mb-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+
+            <button
+                type="submit"
+                class="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition duration-200"
+            >
+                Sign In
+            </button>
+
+        </form>
+
+        <div class="mt-5 text-center space-y-2">
+
+            <p>
+                <a href="/signup" class="text-blue-600 hover:underline">
+                    Create account
+                </a>
+            </p>
+
+            <p>
+                <a href="/forgot-password" class="text-blue-600 hover:underline">
+                    Forgot password?
+                </a>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
