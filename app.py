@@ -94,7 +94,7 @@ def login():
                 session["user"] = response.user.id
                 session["email"] = response.user.email
 
-                return redirect(url_for("dashboard"))
+                return redirect(url_for("index"))
 
             return "❌ Invalid login"
 
