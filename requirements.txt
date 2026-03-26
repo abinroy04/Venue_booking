@@ -3,9 +3,13 @@
 # Web Framework
 Flask==3.0.0
 
+# Password Hashing
+bcrypt==3.2.0
+psycopg2
+
 # Supabase Client
-supabase==2.3.0
-postgrest-py==0.13.2
+supabase
+gotrue
 
 # Environment Variables
 python-dotenv==1.0.0
@@ -15,13 +19,14 @@ python-dateutil==2.8.2
 
 # HTTP Requests
 requests==2.31.0
+httpx==0.24.1
 
 # Authentication & Security
 PyJWT==2.8.0
 cryptography==41.0.7
 
 # Database (PostgreSQL client, optional for direct access)
-psycopg2-binary==2.9.9
+# psycopg2-binary==2.9.7
 
 # Production Server
 gunicorn==21.2.0
