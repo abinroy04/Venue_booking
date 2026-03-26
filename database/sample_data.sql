@@ -1,6 +1,6 @@
 
 -- ============================================
--- SAMPLE DATA (Optional - for testing)
+-- SAMPLE DATA (for testing)
 -- ============================================
 
 -- Insert sample admin user

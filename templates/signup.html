@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sign Up | Venue Booking</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="flex items-center justify-center h-screen bg-gray-100">
+
+<div class="bg-white p-8 rounded-xl shadow-md w-80">
+
+    <h2 class="text-2xl font-semibold mb-5 text-center">
+        Create Account
+    </h2>
+
+    <form method="POST" action="/signup">
+
+        <input 
+            type="text" 
+            name="name" 
+            placeholder="Full Name" 
+            required
+            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+
+        <input 
+            type="email" 
+            name="email" 
+            placeholder="Email" 
+            required
+            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+
+        <input 
+            type="password" 
+            name="password" 
+            placeholder="Password" 
+            required
+            class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+
+        <button 
+            type="submit"
+            class="w-full p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+        >
+            Sign Up
+        </button>
+
+    </form>
+
+    <p class="text-center mt-4 text-gray-600">
+        Already have account?
+        <a href="/login" class="text-purple-600 hover:underline">
+            Login
+        </a>
+    </p>
+
+</div>
+
+</body>
+</html>
