@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Creation</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-100 p-6">
+
+<div class="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+  <h2 class="text-2xl font-bold mb-6 text-center">Create Event</h2>
+
+  <form id="eventForm" class="space-y-4">
+
+    <input type="text" id="event_title" placeholder="Event Title"
+      class="w-full p-3 border rounded-lg" required>
+
+    <textarea id="description" placeholder="Description"
+      class="w-full p-3 border rounded-lg" required></textarea>
+
+    <div class="grid grid-cols-2 gap-4">
+      <input type="text" id="faculty_name" placeholder="Faculty Name"
+        class="p-3 border rounded-lg" required>
+
+      <input type="tel" id="faculty_phone" placeholder="Phone Number"
+        class="p-3 border rounded-lg" required>
+    </div>
+
+    <select id="event_type" class="w-full p-3 border rounded-lg" required>
+      <option value="">Select Event Type</option>
+      <option value="department">Department</option>
+      <option value="college">College</option>
+    </select>
+
+    <div class="grid grid-cols-2 gap-4">
+      <input type="datetime-local" id="start_time" class="p-3 border rounded-lg" required>
+      <input type="datetime-local" id="end_time" class="p-3 border rounded-lg" required>
+    </div>
+
+    <select id="club" class="w-full p-3 border rounded-lg" required>
+      <option value="">Select Club</option>
+    </select>
+
+    <select id="venue" class="w-full p-3 border rounded-lg" required>
+      <option value="">Select Venue</option>
+    </select>
+
+    <div class="relative">
+  <label class="font-semibold">Venue Amenities</label>
+
+  <!-- Dropdown Button -->
+  <div id="amenitiesBox"
+    class="w-full p-3 border rounded-lg cursor-pointer bg-white">
+    Select amenities
+  </div>
+
+  <!-- Dropdown List -->
+  <div id="amenitiesDropdown"
+    class="absolute w-full border bg-white rounded-lg mt-1 hidden z-10 max-h-40 overflow-y-auto">
+  </div>
+</div>
+
+
+
+    <div>
+  <label class="font-semibold block mb-1">Upload Permission</label>
+  <input type="file" id="file" accept=".pdf,image/*"
+    class="w-full p-2 border rounded-lg" required>
+</div>
+    <button type="submit"
+      class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700">
+      Submit Event
+    </button>
+
+  </form>
+
+  <p id="msg" class="text-center mt-4"></p>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
