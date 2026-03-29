@@ -1,17 +1,29 @@
-body {
-  font-family: 'Segoe UI', sans-serif;
+/* Make ALL input text same light black */
+input, textarea, select {
+  color: #6b7280;
 }
 
-input:focus, textarea:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px #2563eb;
+/* Placeholder text */
+::placeholder {
+  color: #6b7280;
 }
 
-li {
-  list-style: none;
+/* Fix dropdown default text */
+select:invalid {
+  color: #6b7280;
 }
 
-#msg {
-  font-weight: 500;
+/* When user selects value → slightly darker */
+select:valid {
+  color: #111827;
+}
+
+/* Fix datetime input text */
+input[type="datetime-local"] {
+  color: #6b7280;
+}
+
+/* Fix your custom amenities box */
+#amenitiesBox {
+  color: #6b7280;
 }
