@@ -3,7 +3,7 @@ Venue Booking System - Main Application
 Flask backend for managing venue bookings
 """
 
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
@@ -138,6 +138,60 @@ def test_signup():
         print("ERROR:", e)
         return "Error"
 
+# ==================== Venue Route (Shows the HTML Page) ====================
+@app.route("/venue")
+def venue():
+    return render_template("venue.html")
+
+# ==================== Venue API ====================
+@app.route("/venues", methods=["POST"])
+def create_venue_api():
+    try:
+        data = request.get_json()
+        print("\n--- 1. INCOMING FROM BROWSER ---")
+        print(data)
+        
+        venue_name = data.get("venue_name")
+        venue_type = data.get("venue_type") 
+        location = data.get("location")
+        description = data.get("description")
+        floor = data.get("floor")
+        room_number = data.get("room_number")
+        capacity = data.get("capacity")
+        
+        # Capture the facilities array
+        facilities = data.get("facilities", [])
+
+        if not venue_name or not venue_type or not location:
+            return jsonify({"success": False, "error": {"message": "Missing required fields"}}), 400
+
+        insert_data = {
+            "name": venue_name,
+            "venue_type": venue_type,
+            "location": location,
+            "floor": floor,
+            "room_number": room_number,
+            "capacity": capacity,
+            "description": description,
+            "facilities": facilities, # Inserted directly as JSONB data
+            "is_active": True,
+            "booking_allowed": True
+        }
+        
+        print("\n--- 2. SENDING TO SUPABASE ---")
+        print(insert_data)
+
+        response = supabase.table("venues").insert(insert_data).execute()
+        
+        print("\n--- 3. SUCCESS FROM SUPABASE ---")
+        print(response)
+
+        return jsonify({"success": True, "message": "Venue created successfully"}), 201
+
+    except Exception as e:
+        print("\n--- ❌ ERROR CRASH ❌ ---")
+        print(e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
 # ==================== Run App ====================
 if __name__ == "__main__":
     port = int(os.getenv("APP_PORT", 5000))
