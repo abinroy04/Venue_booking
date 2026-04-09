@@ -139,9 +139,20 @@ def test_signup():
         return "Error"
 
 # ==================== Venue Route (Shows the HTML Page) ====================
-@app.route("/venue")
+@app.route("/venue", methods=['GET'])
 def venue():
-    return render_template("venue.html")
+    # Fetch all master lists from Supabase
+    locations_response = supabase.table("location").select("*").execute()
+    types_response = supabase.table("venue_type").select("*").execute()
+    facilities_response = supabase.table("facilities").select("*").execute()
+
+    # Pass the data to the HTML using Jinja
+    return render_template(
+        "venue.html", 
+        locations=locations_response.data,
+        venue_types=types_response.data,
+        facilities=facilities_response.data
+    )
 
 # ==================== Venue API ====================
 @app.route("/venues", methods=["POST"])
@@ -152,44 +163,54 @@ def create_venue_api():
         print(data)
         
         venue_name = data.get("venue_name")
-        venue_type = data.get("venue_type") 
-        location = data.get("location")
+        venue_type_id = data.get("venue_type") # This is now a UUID!
+        location_id = data.get("location")     # This is now a UUID!
         description = data.get("description")
         floor = data.get("floor")
         room_number = data.get("room_number")
         capacity = data.get("capacity")
-        
-        # Capture the facilities array
-        facilities = data.get("facilities", [])
+        facilities = data.get("facilities", []) # Array of objects with facility_id & quantity
 
-        if not venue_name or not venue_type or not location:
+        if not venue_name or not venue_type_id or not location_id:
             return jsonify({"success": False, "error": {"message": "Missing required fields"}}), 400
 
+        # --- STEP 1: Insert Venue ---
         insert_data = {
             "name": venue_name,
-            "venue_type": venue_type,
-            "location": location,
+            "venue_type_id": venue_type_id, # Updated column name
+            "location_id": location_id,     # Updated column name
             "floor": floor,
             "room_number": room_number,
             "capacity": capacity,
             "description": description,
-            "facilities": facilities, # Inserted directly as JSONB data
             "is_active": True,
             "booking_allowed": True
         }
         
-        print("\n--- 2. SENDING TO SUPABASE ---")
-        print(insert_data)
-
-        response = supabase.table("venues").insert(insert_data).execute()
+        print("\n--- 2. SENDING VENUE TO SUPABASE ---")
+        venue_response = supabase.table("venues").insert(insert_data).execute()
         
-        print("\n--- 3. SUCCESS FROM SUPABASE ---")
-        print(response)
+        # Grab the UUID of the venue we just created
+        new_venue_id = venue_response.data[0]['id'] 
 
+        # --- STEP 2: Insert into Bridge Table ---
+        if facilities:
+            print("\n--- 3. SENDING FACILITIES TO BRIDGE TABLE ---")
+            bridge_data = []
+            for item in facilities:
+                bridge_data.append({
+                    "venue_id": new_venue_id,
+                    "facility_id": item['facility_id'],
+                    "quantity": int(item['quantity'])
+                })
+            # Bulk insert all tags at once
+            supabase.table("venue_facilities").insert(bridge_data).execute()
+
+        print("\n--- 4. SUCCESS ---")
         return jsonify({"success": True, "message": "Venue created successfully"}), 201
 
     except Exception as e:
-        print("\n--- ❌ ERROR CRASH ❌ ---")
+        print("\n--- ERROR CRASH  ---")
         print(e)
         return jsonify({"success": False, "error": {"message": str(e)}}), 500
 # ==================== Run App ====================
