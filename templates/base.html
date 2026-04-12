@@ -1,46 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Venue Booking System{% endblock %}</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{% block title %}Venue Booking{% endblock %}</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#1a56db',
+        accent: '#6d28d9',
+        sidebar: '#1f2937',
+        bgsoft: '#f3f4f6'
+      }
+    }
+  }
+}
+</script>
+
 </head>
 
-<body class="min-h-screen">
-    <div class="bg-white">
-        <!-- Header -->
-        <header>
-            <div class="flex-1">
-                <h1 class="text-3xl md:text-4xl font-bold">
-                    <a href="/" class="hover:text-white/90 transition-colors">Venue Booking System</a>
-                </h1>
+<body class="bg-bgsoft text-gray-800">
+
+<div class="flex min-h-screen">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-sidebar text-white p-5 hidden md:block">
+
+        <h1 class="text-xl font-bold mb-8">Venue System</h1>
+
+        <nav class="space-y-4 text-sm">
+            <a href="/" class="block text-white">Dashboard</a>
+            <a href="#" class="block text-gray-400 hover:text-white">Book Venue</a>
+            <a href="#" class="block text-gray-400 hover:text-white">My Bookings</a>
+        </nav>
+
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1">
+
+        <!-- TOPBAR -->
+        <header class="bg-white border-b px-6 py-4 flex justify-between items-center">
+
+            <h2 class="text-lg font-semibold text-gray-700">
+                {% block subtitle %}{% endblock %}
+            </h2>
+
+            <div class="flex items-center gap-4">
+
+                {% if session.get('user') %}
+                    <span class="text-sm text-gray-600">{{ session['user'] }}</span>
+
+                    <a href="/logout"
+                       class="bg-accent text-white px-4 py-2 rounded-lg hover:bg-violet-800">
+                        Logout
+                    </a>
+                {% else %}
+                    <a href="/login" class="text-primary font-medium hover:bg-violet-800">
+                        Login
+                    </a>
+
+                    <a href="/signup"
+                       class="bg-primary text-white px-4 py-2 rounded-lg">
+                        Sign Up
+                    </a>
+                {% endif %}
+
             </div>
+
         </header>
 
-        <!-- Main Content -->
-        <main>
+        <!-- CONTENT -->
+        <main class="p-6">
             {% block content %}{% endblock %}
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-100 border-t border-gray-200 px-10 py-6">
-            <div class="flex flex-wrap justify-between items-center gap-4">
-                <div class="text-gray-600 text-sm">
-                    <p>Saintgits Venue Booking System.</p>
-                </div>
-                <div class="flex gap-6 text-sm">
-                    <a href="/about" class="text-gray-600 hover:text-indigo-600">About</a>
-                    <a href="/contact" class="text-gray-600 hover:text-indigo-600">Contact</a>
-                    <a href="/help" class="text-gray-600 hover:text-indigo-600">Help</a>
-                </div>
-            </div>
-        </footer>
     </div>
 
-    <!-- Extra JavaScript -->
-    {% block extra_js %}{% endblock %}
+</div>
+
+{% block extra_js %}{% endblock %}
+
 </body>
 </html>

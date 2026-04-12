@@ -116,6 +116,26 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+@app.route("/forget-password", methods=["GET", "POST"])
+def forget_password():
+    if request.method == "POST":
+        email = request.form["email"]
+
+        try:
+            response = supabase.auth.reset_password_for_email(email, {
+                "redirect_to": url_for("login", _external=True)
+            })
+
+            if response.get("data"):
+                return "✅ Password reset email sent! Check your inbox."
+
+            return "❌ Failed to send reset email"
+
+        except Exception as e:
+            print("ERROR:", e)
+            return "Error occurred while sending reset email"
+    return render_template("forget_password.html")
+
 # ==================== Home ====================
 @app.route("/")
 def index():

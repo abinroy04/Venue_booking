@@ -2,61 +2,52 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sign Up | Venue Booking</title>
+<title>Sign Up</title>
 
-<!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#1a56db',
+        accent: '#6d28d9',
+        bgsoft: '#f3f4f6'
+      }
+    }
+  }
+}
+</script>
 
 </head>
 
-<body class="flex items-center justify-center h-screen bg-gray-100">
+<body class="bg-bgsoft flex items-center justify-center min-h-screen px-4">
 
-<div class="bg-white p-8 rounded-xl shadow-md w-80">
+<div class="bg-white border border-gray-200 rounded-xl shadow-md p-6 sm:p-8 w-full max-w-md mx-4">
 
-    <h2 class="text-2xl font-semibold mb-5 text-center">
-        Create Account
-    </h2>
 
-    <form method="POST" action="/signup">
+    <h2 class="text-2xl font-bold text-center mb-6">Create Account</h2>
 
-        <input 
-            type="text" 
-            name="name" 
-            placeholder="Full Name" 
-            required
-            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
+    <form method="POST">
 
-        <input 
-            type="email" 
-            name="email" 
-            placeholder="Email" 
-            required
-            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
+        <input type="text" name="name" placeholder="Full Name"
+            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
 
-        <input 
-            type="password" 
-            name="password" 
-            placeholder="Password" 
-            required
-            class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
+        <input type="email" name="email" placeholder="Email"
+            class="w-full p-3 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
 
-        <button 
-            type="submit"
-            class="w-full p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-        >
+        <input type="password" name="password" placeholder="Password"
+            class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary">
+
+        <button class="w-full bg-primary text-white py-3 rounded-lg hover:bg-violet-800">
             Sign Up
         </button>
 
     </form>
 
-    <p class="text-center mt-4 text-gray-600">
-        Already have account?
-        <a href="/login" class="text-purple-600 hover:underline">
-            Login
-        </a>
+    <p class="text-center mt-4 text-sm">
+        <a href="/login" class="text-primary hover:underline">Login</a>
     </p>
 
 </div>
