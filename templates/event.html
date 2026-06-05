@@ -177,7 +177,6 @@
                     const option = document.createElement('option');
                     option.value = f.id;
                     option.textContent = `${f.name} (Max: ${f.max_quantity})`;
-                    // Store the true max in a data attribute
                     option.dataset.max = f.max_quantity;
                     option.dataset.name = f.name;
                     facilityDropdown.appendChild(option);
@@ -194,36 +193,36 @@
             }
         });
 
-        // The Dropdown Manager: Leaves the box blank, stops fighting the browser
+        // Update the max HTML attribute AND reset box to EMPTY when a new facility is chosen
         facilityDropdown.addEventListener('change', function() {
-            // We just clear the box and let the user type.
+            const selectedOption = this.options[this.selectedIndex];
+            if (!selectedOption || !selectedOption.value) return;
+
+            // Explicitly tell the browser's up/down arrows the NEW limit
+            const maxAllowed = selectedOption.dataset.max;
+            facilityQuantity.setAttribute('max', maxAllowed);
+            facilityQuantity.max = maxAllowed; 
+
+            // Leave the box blank for the user to type
             facilityQuantity.value = ''; 
         });
 
-        // The "Bouncer": JS intercepts every keypress to enforce the limit
+        // The Quantity Listener (stops them from typing over the max limit)
         facilityQuantity.addEventListener('input', function() {
             const selectedOption = facilityDropdown.options[facilityDropdown.selectedIndex];
             if (!selectedOption || !selectedOption.value) return;
 
-            // Read the true max DIRECTLY from the dropdown data
             const currentMax = parseInt(selectedOption.dataset.max) || 999;
             
-            if (this.value === '') return; // Allow the box to be empty while typing
+            if (this.value === '') return; // Allow the box to be empty
             
             const currentValue = parseInt(this.value);
 
-            // Instant enforcement
             if (currentValue > currentMax) {
-                this.value = currentMax; // Snap to max
+                this.value = currentMax;
             } else if (currentValue < 1) {
-                this.value = ''; // Erase if below 1 or 0
-            }
-        });
-
-        // Cleanup if they click away while empty
-        facilityQuantity.addEventListener('blur', function() {
-            if (this.value === '' || parseInt(this.value) < 1) {
-                this.value = 1;
+                // If they type 0 or a negative, just empty the box so they can try again
+                this.value = '';
             }
         });
 
@@ -238,7 +237,7 @@
 
             const qty = parseInt(facilityQuantity.value);
             
-            // Safety Check: Make sure they actually typed a valid number
+            // New Safety Check: Make sure they actually typed a valid number
             if (isNaN(qty) || qty < 1) {
                 alert("Please enter a valid quantity before adding.");
                 return;
