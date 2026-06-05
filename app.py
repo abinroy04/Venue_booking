@@ -66,7 +66,7 @@ def signup():
                 }).execute()
 
                 return "✅ Signup successful! Please login."
-
+            return "⚠️ Signup completed. Please check your email for verification."
 
         except Exception as e:
             print("ERROR DETAILS:", e)
@@ -74,6 +74,7 @@ def signup():
 
 
     return render_template("signup.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -260,6 +261,82 @@ def create_event():
         print("ERROR DETAILS:", str(e)) 
         return jsonify({'error': str(e)}), 500
 
+# ==================== Venue Route (Shows the HTML Page) ====================
+@app.route("/venue", methods=['GET'])
+def venue():
+    # Fetch all master lists from Supabase
+    locations_response = supabase.table("location").select("*").execute()
+    types_response = supabase.table("venue_type").select("*").execute()
+    facilities_response = supabase.table("facilities").select("*").execute()
+
+    # Pass the data to the HTML using Jinja
+    return render_template(
+        "venue.html", 
+        locations=locations_response.data,
+        venue_types=types_response.data,
+        facilities=facilities_response.data
+    )
+
+# ==================== Venue API ====================
+@app.route("/venues", methods=["POST"])
+def create_venue_api():
+    try:
+        data = request.get_json()
+        print("\n--- 1. INCOMING FROM BROWSER ---")
+        print(data)
+        
+        venue_name = data.get("venue_name")
+        venue_type_id = data.get("venue_type") # This is now a UUID!
+        location_id = data.get("location")     # This is now a UUID!
+        description = data.get("description")
+        floor = data.get("floor")
+        room_number = data.get("room_number")
+        capacity = data.get("capacity")
+        facilities = data.get("facilities", []) # Array of objects with facility_id & quantity
+
+        if not venue_name or not venue_type_id or not location_id:
+            return jsonify({"success": False, "error": {"message": "Missing required fields"}}), 400
+
+        # --- STEP 1: Insert Venue ---
+        insert_data = {
+            "name": venue_name,
+            "venue_type_id": venue_type_id, # Updated column name
+            "location_id": location_id,     # Updated column name
+            "floor": floor,
+            "room_number": room_number,
+            "capacity": capacity,
+            "description": description,
+            "is_active": True,
+            "booking_allowed": True
+        }
+        
+        print("\n--- 2. SENDING VENUE TO SUPABASE ---")
+        venue_response = supabase.table("venues").insert(insert_data).execute()
+        
+        # Grab the UUID of the venue we just created
+        new_venue_id = venue_response.data[0]['id'] 
+
+        # --- STEP 2: Insert into Bridge Table ---
+        if facilities:
+            print("\n--- 3. SENDING FACILITIES TO BRIDGE TABLE ---")
+            bridge_data = []
+            for item in facilities:
+                bridge_data.append({
+                    "venue_id": new_venue_id,
+                    "facility_id": item['facility_id'],
+                    "quantity": int(item['quantity'])
+                })
+            # Bulk insert all tags at once
+            supabase.table("venue_facilities").insert(bridge_data).execute()
+
+        print("\n--- 4. SUCCESS ---")
+        return jsonify({"success": True, "message": "Venue created successfully"}), 201
+
+    except Exception as e:
+        print("\n--- ERROR CRASH  ---")
+        print(e)
+        return jsonify({"success": False, "error": {"message": str(e)}}), 500
+# ==================== Run App ====================
 if __name__ == "__main__":
     port = int(os.getenv("APP_PORT", 5000))
     host = os.getenv("APP_HOST", "127.0.0.1")
