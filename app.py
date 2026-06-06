@@ -21,9 +21,11 @@ except Exception as e:
 
 load_dotenv()
 
-app = Flask(__name__)
-app.secret_key = os.getenv('APP_SECRET_KEY', 'super-secret-key-change-this')
 
+app = Flask(__name__)
+
+
+app.secret_key = os.getenv('APP_SECRET_KEY', 'super-secret-key-change-this')
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
