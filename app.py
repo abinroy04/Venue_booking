@@ -126,42 +126,27 @@ def login():
                     .eq("id", response.user.id)\
                     .single()\
                     .execute()
-
                 session["role"] = user_record.data["role"]
                 session["user_name"] = user_record.data["user_name"]
-
-
                 role = session["role"]
-
                 if role.startswith("hod"):
                     return redirect(url_for("dashboard"))
-
                 elif role == "pro":
                     return redirect(url_for("dashboard"))
-
                 elif role == "admin":
                     return redirect(url_for("dashboard"))
-
                 return redirect(url_for("index"))   
-
             return "Invalid login. Try again."
-
         except Exception as e:
             error = str(e)
             print("ERROR DETAILS:", error)
-
             flash(
         "Invalid email or password.",
         "error"
-    )
-
+        )
             return redirect(url_for("login"))
             
-    flash(
-    "Invalid email or password.",
-    "error"
-)
-    return redirect(url_for("login"))
+    return render_template("login.html")
 
 @app.route("/dashboard")
 @login_required
