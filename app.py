@@ -188,15 +188,19 @@ def get_facilities_for_venue(venue_id):
 
 @app.route('/api/calendar-events', methods=['GET'])
 def get_calendar_events():
-    """Fetch all events and format them for FullCalendar.js"""
+    """Fetch all events from the view and format them for FullCalendar.js"""
     try:
-        response = supabase.table('Events').select('id, title, start_time, end_time').execute()
+        # 💥 CHANGED: We now query the 'events_view' so we have access to 'venue_name'
+        response = supabase.table('events_view').select('id, title, start_time, end_time, venue_name, club_name').execute()
         
         formatted_events = []
         for item in response.data:
+            # Combine the title and venue for the calendar display
+            display_title = f"{item['title']} ({item['venue_name']})"
+            
             formatted_events.append({
                 'id': item['id'],
-                'title': item['title'],
+                'title': display_title, # This will now show: "Hackathon (Innovation Hall)"
                 'start': item['start_time'], 
                 'end': item['end_time'],
                 'backgroundColor': '#2563eb', 
