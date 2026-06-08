@@ -386,6 +386,41 @@ def create_venue_api():
         print("\n--- ERROR CRASH  ---")
         print(e)
         return jsonify({"success": False, "error": {"message": str(e)}}), 500
+
+@app.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    user_id = session.get("user")
+    
+    if request.method == "POST":
+        updated_name = request.form.get("user_name")
+        updated_phone = request.form.get("phone_number")
+        updated_dept_id = request.form.get("department_id") # Changed to department_id
+        
+        try:
+            supabase.table("users").update({
+                "user_name": updated_name,
+                "phone_number": updated_phone,
+                "department_id": updated_dept_id # Saving to the new FK column
+            }).eq("id", user_id).execute()
+            
+            session["user_name"] = updated_name
+            flash("Profile updated successfully!", "success")
+        except Exception as e:
+            print("Error updating profile:", e)
+            flash("Failed to update profile.", "error")
+        return redirect(url_for("profile"))
+
+    # GET Request
+    try:
+        user_record = supabase.table("users").select("*").eq("id", user_id).single().execute()
+        dept_response = supabase.table("department").select("*").order("name").execute()
+        
+        return render_template("profile.html", user=user_record.data, departments=dept_response.data)
+    except Exception as e:
+        print("Error fetching profile:", e)
+        return "Error loading profile."
+
 # ==================== Run App ====================
 if __name__ == "__main__":
     port = int(os.getenv("APP_PORT", 5000))
