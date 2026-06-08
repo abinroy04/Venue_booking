@@ -3,6 +3,8 @@ Venue Booking System - Main Application
 Flask backend for managing venue bookings
 """
 
+import email
+from flask import flash
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from supabase import create_client, Client
 import os
@@ -33,8 +35,6 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ ERROR: Missing SUPABASE_URL or SUPABASE_ANON_KEY")
     exit(1)
 
-print("SUPABASE_URL:", SUPABASE_URL)
-print("SUPABASE_KEY:", SUPABASE_KEY[:10] if SUPABASE_KEY else None)
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def login_required(f):
@@ -51,29 +51,57 @@ def signup():
         name = request.form["name"]
         email = request.form["email"]
         password = request.form["password"]
-
+        email=email.lower().strip()
+        if not email.endswith("@saintgits.org"):
+            return "Only Saintgits email addresses are allowed."
+        reserved_accounts = [ "hodcse@saintgits.org", "hodeee@saintgits.org", "pro@saintgits.org", "admin@saintgits.org" ]
+        if email in reserved_accounts:
+            return "This email address is reserved for specific users."
         try:
             response = supabase.auth.sign_up({
                 "email": email,
                 "password": password
             })
 
-            print("FULL RESPONSE:", response)
+            print("FULL RESPONSE:", response.user.email)
 
             if response.user:
+                special_roles = {
+    "hodcse@saintgits.org": "hod_cse",
+    "hodeee@saintgits.org": "hod_eee",
+    "pro@saintgits.org": "pro",
+    "admin@saintgits.org": "admin"
+}
+                role = special_roles.get(email, "student")
+                
                 supabase.table("users").insert({
                     "id": response.user.id,
                     "email": response.user.email,
-                    "name": name
+                    "user_name": name,
+                    "role": role,
+                    "is_active": True
                 }).execute()
 
-                return "✅ Signup successful! Please login."
+                return redirect(url_for("login"))
             return "⚠️ Signup completed. Please check your email for verification."
 
         except Exception as e:
-            print("ERROR DETAILS:", e)
-            return f"❌ Error: {str(e)}" 
+            error = str(e)
+            print("ERROR DETAILS:", error)
 
+            if "users_email_key" in error.lower() or "already exists" or "already registered" in error.lower():
+                flash(
+    "An account with this email already exists. Please login.",
+    "error"
+)
+                return redirect(url_for("signup"))
+
+            flash(
+        "Something went wrong. Please try again.",
+        "error"
+         )
+        return redirect(url_for("signup"))
+        
 
     return render_template("signup.html")
 
@@ -93,17 +121,47 @@ def login():
             if response.user:
                 session["user"] = response.user.id
                 session["email"] = response.user.email
+                user_record = supabase.table("users")\
+                    .select("*")\
+                    .eq("id", response.user.id)\
+                    .single()\
+                    .execute()
+
+                session["role"] = user_record.data["role"]
+                session["user_name"] = user_record.data["user_name"]
 
 
-                return redirect(url_for("index"))
+                role = session["role"]
 
-            return "❌ Invalid login"
+                if role.startswith("hod"):
+                    return redirect(url_for("dashboard"))
+
+                elif role == "pro":
+                    return redirect(url_for("dashboard"))
+
+                elif role == "admin":
+                    return redirect(url_for("dashboard"))
+
+                return redirect(url_for("index"))   
+
+            return "Invalid login. Try again."
 
         except Exception as e:
-            print("ERROR:", e)
-            return "Login error occurred"
+            error = str(e)
+            print("ERROR DETAILS:", error)
 
-    return render_template("login.html")
+            flash(
+        "Invalid email or password.",
+        "error"
+    )
+
+            return redirect(url_for("login"))
+            
+    flash(
+    "Invalid email or password.",
+    "error"
+)
+    return redirect(url_for("login"))
 
 @app.route("/dashboard")
 @login_required
@@ -137,6 +195,7 @@ def test_signup():
         return "❌ Failed"
 
     except Exception as e:
+        
         print("ERROR:", e)
         return "Error"
 

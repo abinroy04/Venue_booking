@@ -1,18 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Server Error</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Server Error | Venue Booking System</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
-  <div class="text-center">
-    <h1 class="text-9xl font-bold text-gray-300">500</h1>
-    <h2 class="text-3xl font-semibold text-gray-800 mt-4">Internal Server Error</h2>
-    <p class="text-gray-600 mt-2">Oops, something went wrong on our end. Please try again later.</p>
-    <a href="/" class="mt-6 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
-      Return Home
-    </a>
-  </div>
+
+<body class="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-800">
+
+    <div class="max-w-md w-full text-center space-y-6">
+        <!-- Visual Icon -->
+        <div class="relative w-28 h-28 mx-auto flex items-center justify-center">
+            <!-- Animated background accent -->
+            <div class="absolute inset-0 bg-red-100 rounded-full blur-xl opacity-60"></div>
+            <!-- Huge SVG 500/Alert icon -->
+            <div class="relative w-20 h-20 bg-red-600 rounded-3xl flex items-center justify-center text-white shadow-xl shadow-red-500/20 animate-pulse">
+                <svg class="w-11 h-11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Details -->
+        <div class="space-y-2.5">
+            <h1 class="text-7xl font-extrabold text-slate-900 tracking-tight">500</h1>
+            <h2 class="text-xl font-bold text-slate-800">Internal Server Error</h2>
+            <p class="text-sm text-slate-400 font-medium leading-relaxed max-w-sm mx-auto">
+                Oops! Something went wrong on our end. Please reload the page or try again in a few minutes.
+            </p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="/" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/15 text-sm active:scale-[0.98]">
+                Return Home
+            </a>
+            <button onclick="location.reload()" class="px-6 py-3 bg-white border border-slate-200 text-slate-600 hover:text-slate-800 font-bold rounded-xl hover:bg-slate-50 transition-all text-sm shadow-sm active:scale-[0.98]">
+                Reload Page
+            </button>
+        </div>
+    </div>
+
 </body>
 </html>

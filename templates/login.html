@@ -1,79 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Login | Venue Booking System</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Venue Booking Portal</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
 </head>
 
-<body class="h-screen flex">
+<body class="min-h-screen flex bg-slate-50">
 
-<!-- Left Side (Image Section) -->
-<div class="hidden md:flex w-1/2 bg-cover bg-center"
-     style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c');">
-</div>
+    <!-- Left Side: Visual Illustration Panel (Hidden on mobile) -->
+    <div class="hidden lg:flex w-1/2 relative bg-blue-600 overflow-hidden items-center justify-center">
+        <!-- Abstract gradient circles -->
+        <div class="absolute w-[500px] h-[500px] rounded-full bg-blue-500/30 -top-20 -left-20 blur-2xl"></div>
+        <div class="absolute w-[600px] h-[600px] rounded-full bg-indigo-700/40 -bottom-20 -right-20 blur-3xl"></div>
+        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
-<!-- Right Side (Login Form) -->
-<div class="w-full md:w-1/2 flex items-center justify-center bg-gray-100">
-
-    <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
-
-        <h2 class="text-3xl font-bold mb-2 text-center">
-            Venue Booking System
-        </h2>
-
-        <p class="text-gray-500 mb-6 text-center">
-            Sign in to your account
-        </p>
-
-        <form method="POST" action="/login">
-
-            <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                required
-                class="w-full p-3 mb-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-
-            <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                required
-                    class="w-full p-3 mb-5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-
-            <button
-                type="submit"
-                class="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 hover:scale-105 transition duration-200"
-            >
-                Sign In
-            </button>
-
-        </form>
-
-        <div class="mt-5 text-center space-y-2">
-
-            <p>
-                <a href="/signup" class="text-blue-600 hover:underline">
-                    Create account
-                </a>
-            </p>
-
-            <p>
-                <a href="/forgot-password" class="text-blue-600 hover:underline">
-                    Forgot password?
-                </a>
-            </p>
-
+        <!-- Banner content -->
+        <div class="relative z-10 max-w-lg px-8 text-white space-y-6 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mx-auto border border-white/20 shadow-xl">
+                <!-- Academic Hat SVG -->
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7" />
+                </svg>
+            </div>
+            <div class="space-y-3">
+                <h2 class="text-3xl font-extrabold tracking-tight">Saintgits Venue Booking</h2>
+                <p class="text-blue-100 font-medium text-base">
+                    Access high-tech campus infrastructure, review reservation calendars, and secure event slots in real-time.
+                </p>
+            </div>
+            <!-- Showcase stats -->
+            <div class="grid grid-cols-2 gap-4 pt-6 border-t border-white/10">
+                <div class="text-center">
+                    <span class="block text-2xl font-extrabold text-white">12+</span>
+                    <span class="text-xs text-blue-200 uppercase font-semibold tracking-wider">Active Venues</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-2xl font-extrabold text-white">Real-Time</span>
+                    <span class="text-xs text-blue-200 uppercase font-semibold tracking-wider">Sync Schedule</span>
+                </div>
+            </div>
         </div>
-
     </div>
 
-</div>
+    <!-- Right Side: Clean Form Panel -->
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white md:bg-slate-50">
+        <div class="w-full max-w-md bg-white md:p-10 md:rounded-3xl md:border md:border-slate-100 md:shadow-xl md:shadow-slate-100/50 flex flex-col space-y-8">
+            <!-- Header -->
+            <div class="text-center space-y-2">
+                <div class="lg:hidden w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white mx-auto shadow-md shadow-blue-500/20 mb-3">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900 tracking-tight">Welcome Back</h3>
+                <p class="text-sm text-slate-400 font-medium">Sign in to your venue booking account</p>
+            </div>
+             {% if error %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+            <!-- Login Form -->
+            <form method="POST" action="/login" class="space-y-5">
+                <!-- Email Input -->
+                <div class="space-y-1.5">
+                    <label for="email" class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Email Address</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                            </svg>
+                        </div>
+                        <input
+                            id="email"
+                            type="email"
+                            name="email"
+                            placeholder="you@example.com"
+                            required
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 placeholder-slate-400 font-medium text-sm"
+                        >
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <label for="password" class="text-xs font-bold text-slate-500 uppercase tracking-wider block">Password</label>
+                        <a href="/forgot-password" class="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                            Forgot password?
+                        </a>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <input
+                            id="password"
+                            type="password"
+                            name="password"
+                            placeholder="Enter your password"
+                            required
+                            class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 placeholder-slate-400 font-medium text-sm"
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    type="submit"
+                    class="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all hover:scale-[1.01] shadow-lg shadow-blue-500/20 active:scale-[0.99] text-sm mt-2"
+                >
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Redirect to signup -->
+            <div class="text-center pt-2">
+                <span class="text-sm text-slate-400 font-medium">Don't have an account?</span>
+                <a href="/signup" class="text-sm font-bold text-blue-600 hover:text-blue-700 ml-1 hover:underline">
+                    Create account
+                </a>
+            </div>
+
+            <!-- Footer info -->
+            <div class="text-center text-xs text-slate-400 font-semibold uppercase tracking-widest pt-4 border-t border-slate-50">
+                Saintgits Engineering
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

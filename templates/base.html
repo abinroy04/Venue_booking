@@ -5,40 +5,227 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Venue Booking System{% endblock %}</title>
     
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
 </head>
 
-<body class="min-h-screen">
-    <div class="bg-white">
-        <!-- Header -->
-        <header>
-            <div class="flex-1">
-                <h1 class="text-3xl md:text-4xl font-bold">
-                    <a href="/" class="hover:text-white/90 transition-colors">Venue Booking System</a>
-                </h1>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main>
-            {% block content %}{% endblock %}
-        </main>
-
-        <!-- Footer -->
-        <footer class="bg-gray-100 border-t border-gray-200 px-10 py-6">
-            <div class="flex flex-wrap justify-between items-center gap-4">
-                <div class="text-gray-600 text-sm">
-                    <p>Saintgits Venue Booking System.</p>
+<body class="min-h-screen bg-slate-50 flex flex-col text-slate-800">
+    <!-- Header/Navbar -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50 w-full transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Brand/Logo -->
+                <div class="flex items-center gap-3">
+                    <a href="/" class="flex items-center gap-2.5 group">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-all">
+                            <!-- Academic Hat SVG -->
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2v-7" />
+                            </svg>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-lg font-bold text-slate-900 leading-none group-hover:text-blue-600 transition-colors">SAINTGITS</span>
+                            <span class="text-xs font-semibold text-slate-500 tracking-wider">VENUE PORTAL</span>
+                        </div>
+                    </a>
                 </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex space-x-1 items-center">
+                    <a href="/" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                        Calendar
+                    </a>
+                    {% if session.get('user') %}
+                    <a href="/event" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                        Book Venue
+                    </a>
+                    <a href="/venue" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                        Manage Venues
+                    </a>
+                    {% endif %}
+                </nav>
+
+                <!-- Auth Buttons -->
+                <div class="hidden md:flex items-center gap-3">
+                    {% if session.get('user') %}
+                    <div class="flex items-center gap-3">
+                        <div class="flex flex-col text-right">
+                            <span class="text-xs text-slate-400">Signed in as</span>
+                            <span class="text-xs font-semibold text-slate-700 max-w-[150px] truncate" title="{{ session.get('email') }}">{{ session.get('email') }}</span>
+                        </div>
+                        <a href="/logout" class="px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-sm font-semibold transition-all shadow-sm">
+                            Sign Out
+                        </a>
+                    </div>
+                    {% else %}
+                    <a href="/login" class="px-4 py-2 text-slate-600 hover:text-blue-600 font-semibold text-sm transition-colors">
+                        Sign In
+                    </a>
+                    <a href="/signup" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-semibold transition-all shadow-md shadow-blue-500/10">
+                        Get Started
+                    </a>
+                    {% endif %}
+                </div>
+
+                <!-- Hamburger menu button -->
+                <div class="md:hidden flex items-center">
+                    <button type="button" id="mobile-menu-btn" class="inline-flex items-center justify-center p-2 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-slate-50 focus:outline-none transition-colors" aria-controls="mobile-menu" aria-expanded="false">
+                        <svg class="h-6 w-6" id="menu-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="h-6 w-6 hidden" id="close-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Drawer -->
+        <div class="md:hidden hidden border-t border-slate-100 bg-white" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="/" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                    Calendar
+                </a>
+                {% if session.get('user') %}
+                <a href="/event" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                    Book Venue
+                </a>
+                <a href="/venue" class="block px-3 py-2.5 rounded-lg text-base font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                    Manage Venues
+                </a>
+                {% endif %}
+            </div>
+            <div class="pt-4 pb-4 border-t border-slate-100 px-4">
+                {% if session.get('user') %}
+                <div class="flex flex-col gap-2">
+                    <div class="text-xs text-slate-400">Signed in as</div>
+                    <div class="text-sm font-semibold text-slate-700 truncate mb-2">{{ session.get('email') }}</div>
+                    <a href="/logout" class="w-full text-center px-4 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-base font-semibold transition-all">
+                        Sign Out
+                    </a>
+                </div>
+                {% else %}
+                <div class="flex flex-col gap-2">
+                    <a href="/login" class="w-full text-center px-4 py-2.5 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-base font-semibold transition-all">
+                        Sign In
+                    </a>
+                    <a href="/signup" class="w-full text-center px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-base font-semibold transition-all shadow-md">
+                        Get Started
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-100 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <!-- Branding -->
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">S</div>
+                    <span class="text-sm font-semibold text-slate-700">Saintgits Venue Booking System</span>
+                </div>
+                <!-- Navigation -->
                 <div class="flex gap-6 text-sm">
-                    <a href="/about" class="text-gray-600 hover:text-indigo-600">About</a>
-                    <a href="/contact" class="text-gray-600 hover:text-indigo-600">Contact</a>
-                    <a href="/help" class="text-gray-600 hover:text-indigo-600">Help</a>
+                    <a href="/about" class="text-slate-500 hover:text-blue-600 transition-colors">About</a>
+                    <a href="/contact" class="text-slate-500 hover:text-blue-600 transition-colors">Contact</a>
+                    <a href="/help" class="text-slate-500 hover:text-blue-600 transition-colors">Help</a>
+                </div>
+                <!-- Copyright -->
+                <div class="text-slate-400 text-xs">
+                    &copy; 2026 Saintgits College of Engineering. All rights reserved.
                 </div>
             </div>
-        </footer>
-    </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Mobile Menu Drawer Toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('mobile-menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            const menuIcon = document.getElementById('menu-icon');
+            const closeIcon = document.getElementById('close-icon');
+
+            if (btn && menu) {
+                btn.addEventListener('click', function() {
+                    const isHidden = menu.classList.contains('hidden');
+                    if (isHidden) {
+                        menu.classList.remove('hidden');
+                        menuIcon.classList.add('hidden');
+                        closeIcon.classList.remove('hidden');
+                    } else {
+                        menu.classList.add('hidden');
+                        menuIcon.classList.remove('hidden');
+                        closeIcon.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
 
     <!-- Extra JavaScript -->
     {% block extra_js %}{% endblock %}
