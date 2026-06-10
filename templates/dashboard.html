@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-6 py-8">
+
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">
+            Welcome, {{ user_name }}
+        </h1>
+        <p class="text-slate-500 mt-2">
+            Track your venue booking requests and approvals.
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Total Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-blue-600 mt-2">
+                {{ events|length }}
+            </p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Pending Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-amber-500 mt-2">
+                {{ events|selectattr('status','equalto','Pending Approval')|list|length }}
+            </p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Approved Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-green-600 mt-2">
+                {{ events|selectattr('status','equalto','Approved')|list|length }}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- Events Table -->
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-semibold">
+                My Event Requests
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-50">
+
+                    <tr>
+                        <th class="text-left px-6 py-4">
+                            Event
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Status
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Assigned To
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Facility Status
+                        </th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for event in events %}
+
+                    <tr class="border-t">
+
+                        <td class="px-6 py-4">
+                            {{ event.title }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.status }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.assigned_to }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.pro_status }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

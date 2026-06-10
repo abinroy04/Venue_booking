@@ -34,9 +34,16 @@ SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("❌ ERROR: Missing SUPABASE_URL or SUPABASE_ANON_KEY")
     exit(1)
-
+print("URL:", SUPABASE_URL)
+print("KEY:", SUPABASE_KEY[:20] if SUPABASE_KEY else "None")
+print("KEY LENGTH:", len(SUPABASE_KEY))
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
+service_supabase: Client = create_client(
+    SUPABASE_URL,
+    SERVICE_KEY
+)
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -151,7 +158,18 @@ def login():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return f"Welcome {session['email']} 🎉"
+    events = (
+        supabase.table("Events")
+        .select("*")
+        .eq("created_by", session["user"])
+        .execute()
+    )
+
+    return render_template(
+        "dashboard.html",
+        events=events.data,
+        user_name=session.get("user_name")
+    )
 
 @app.route("/logout")
 def logout():
@@ -258,7 +276,11 @@ def get_calendar_events():
 def create_event():
     """Handle event form submission, file upload, and facility JSON parsing"""
     try:
+        print("STEP 1")
         data = dict(request.form)
+
+        if "user" in session:
+            data["created_by"] = session["user"]
         
         # 1. Grab the JSON string of facilities and convert it to a Python list
         facilities_to_insert = []
@@ -275,23 +297,79 @@ def create_event():
             # Remove the raw JSON string from the main data dictionary 
             data.pop('facilities_json', None)
 
+        print("STEP 2")
         # 2. Handle the File Upload
         permission_file = request.files.get('permission_file')
+        print("STEP 3")
+
+
         if permission_file and permission_file.filename:
             original_filename = secure_filename(permission_file.filename)
             unique_filename = f"{int(time.time())}_{original_filename}"
             file_bytes = permission_file.read()
+            try:
+                service_supabase.storage.from_('approved_letters').upload(
+                    file=file_bytes,
+                    path=unique_filename,
+                    file_options={"content-type": permission_file.content_type}
+                )
+                print("UPLOAD SUCCESS")
 
-            supabase.storage.from_('approved_letters').upload(
-                file=file_bytes,
-                path=unique_filename,
-                file_options={"content-type": permission_file.content_type}
-            )
-            public_url = supabase.storage.from_('approved_letters').get_public_url(unique_filename)
+            except Exception as e:
+                print("STORAGE ERROR:")
+                print(e)
+                raise
+
+            public_url = service_supabase.storage.from_('APPROVED_LETTERS').get_public_url(unique_filename)
+
             data['permission_file_url'] = public_url
+        # Determine approval authority
+        print("STEP 4")
+        venue_id = data.get("venue_id")
+
+        venue_response = (
+    supabase.table("venues")
+    .select("name")
+    .eq("id", venue_id)
+    .single()
+    .execute()
+)
+
+        venue_name = venue_response.data["name"]
+
+        if venue_name == "RB Seminar Hall":
+            data["assigned_to"] = "hod_cse"
+
+        elif venue_name == "EEE Seminar Hall":
+            data["assigned_to"] = "hod_eee"
+        
+        elif venue_name == "ME Seminar Hall":
+            data["assigned_to"] = "hod_me"
+
+        elif venue_name == "VB Seminar Hall":
+            data["assigned_to"] = "hod_ce"
+
+        elif venue_name in [
+    "Mini Auditorium",
+    "High-Tech Lab",
+    "AK Seminar Hall",
+    "AB Seminar Hall",
+]:
+            data["assigned_to"] = "pro"
+
+        else:
+            data["assigned_to"] = "pro"
+
+        data["status"] = "Pending Approval"
+
+        print("DATA BEING SENT:")
+        print(data)
+
+        print("STEP 4")
 
         # 3. Insert the main data into the Events table
         event_response = supabase.table('Events').insert(data).execute()
+        print("EVENT INSERT SUCCESS")
         
         # Grab the newly generated Event ID
         new_event_id = event_response.data[0]['id']
@@ -303,7 +381,9 @@ def create_event():
                 f['event_id'] = new_event_id
                 
             # Perform a bulk insert into event_facilities
+            print("TRYING FACILITY INSERT")
             supabase.table('event_facilities').insert(facilities_to_insert).execute()
+            print("FACILITY INSERT SUCCESS")
 
         return jsonify({'message': 'Event created successfully!', 'data': event_response.data}), 201
         
