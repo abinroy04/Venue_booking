@@ -60,10 +60,12 @@ def signup():
         password = request.form["password"]
         email=email.lower().strip()
         if not email.endswith("@saintgits.org"):
-            return "Only Saintgits email addresses are allowed."
+            flash("Only Saintgits email addresses are allowed.", "error")
+            return redirect(url_for("signup"))
         reserved_accounts = [ "hodcse@saintgits.org", "hodeee@saintgits.org", "pro@saintgits.org", "admin@saintgits.org" ]
         if email in reserved_accounts:
-            return "This email address is reserved for specific users."
+            flash("This email address is reserved for specific users.", "error")
+            return redirect(url_for("signup"))
         try:
             response = supabase.auth.sign_up({
                 "email": email,
@@ -96,14 +98,17 @@ def signup():
             error = str(e)
             print("ERROR DETAILS:", error)
 
-            if "users_email_key" in error.lower() or "already exists" or "already registered" in error.lower():
+            if (
+    "users_email_key" in error.lower()
+    or "already exists" in error.lower()
+    or "already registered" in error.lower()):
                 flash(
     "An account with this email already exists. Please login.",
     "error"
 )
                 return redirect(url_for("signup"))
 
-            flash(
+        flash(
         "Something went wrong. Please try again.",
         "error"
          )
@@ -171,6 +176,19 @@ def dashboard():
         events=events.data,
         user_name=session.get("user_name")
     )
+
+@app.route("/forget_password", methods=["GET", "POST"])
+def forget_password():
+    if request.method == "POST":
+        email = request.form["email"].strip().lower()
+        try:
+            supabase.auth.reset_password_for_email(email)
+            flash("Password reset email sent.", "success")
+        except Exception as e:
+            print("ERROR:", e)
+            flash("Unable to send reset email. Please try again.", "error")
+        return redirect(url_for("forget_password"))
+    return render_template("forget_password.html")
 
 @app.route("/logout")
 def logout():
