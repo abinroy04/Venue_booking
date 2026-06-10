@@ -159,9 +159,10 @@ def login():
 @login_required
 def dashboard():
     events = (
-        supabase.table("Events")
+        supabase.table("dashboard_events_view")
         .select("*")
         .eq("created_by", session["user"])
+        .order("start_time")
         .execute()
     )
 
@@ -320,9 +321,10 @@ def create_event():
                 print(e)
                 raise
 
-            public_url = service_supabase.storage.from_('APPROVED_LETTERS').get_public_url(unique_filename)
+            public_url = service_supabase.storage.from_('approved_letters').get_public_url(unique_filename)
 
             data['permission_file_url'] = public_url
+        print(public_url)
         # Determine approval authority
         print("STEP 4")
         venue_id = data.get("venue_id")
@@ -500,6 +502,16 @@ def profile():
     except Exception as e:
         print("Error fetching profile:", e)
         return "Error loading profile."
+    
+@app.route("/cancel-event/<event_id>", methods=["POST"])
+@login_required
+def cancel_event(event_id):
+    reason=request.form.get("reason")
+    supabase.table("Events")\
+        .update({"status": "Cancelled", "cancellation_reason": reason})\
+        .eq("id", event_id)\
+        .execute()
+    return redirect(url_for("dashboard"))    
 
 # ==================== Run App ====================
 if __name__ == "__main__":
