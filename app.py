@@ -144,7 +144,7 @@ def login():
                 if role.startswith("hod"):
                     return redirect(url_for("dashboard"))
                 elif role == "pro":
-                    return redirect(url_for("dashboard"))
+                    return redirect(url_for("pro_dashboard"))
                 elif role == "admin":
                     return redirect(url_for("dashboard"))
                 return redirect(url_for("index"))   
@@ -176,6 +176,150 @@ def dashboard():
         events=events.data,
         user_name=session.get("user_name")
     )
+
+# ==================== PRO Dashboard ====================
+
+def pro_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        if session.get("role") != "pro":
+            flash("Access denied. PRO role required.", "error")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/pro-dashboard")
+@pro_required
+def pro_dashboard():
+    """PRO Dashboard — calendar view of all events for facility management"""
+    events = (
+        supabase.table("dashboard_events_view")
+        .select("*")
+        .neq("status", "Cancelled")
+        .order("start_time")
+        .execute()
+    )
+    return render_template(
+        "pro_dashboard.html",
+        events=events.data,
+        user_name=session.get("user_name")
+    )
+
+@app.route('/api/pro-calendar-events', methods=['GET'])
+@pro_required
+def get_pro_calendar_events():
+    """Return all non-cancelled events formatted for FullCalendar, color-coded by pro_status"""
+    try:
+        response = (
+            supabase.table('dashboard_events_view')
+            .select('id, title, start_time, end_time, venue_name, club_name, status, pro_status, assigned_to')
+            .neq('status', 'Cancelled')
+            .execute()
+        )
+
+        color_map = {
+            'Approved': {'bg': '#059669', 'border': '#047857'},   # emerald
+            'Rejected': {'bg': '#dc2626', 'border': '#b91c1c'},   # red
+        }
+        default_color = {'bg': '#d97706', 'border': '#b45309'}    # amber (Pending)
+
+        formatted = []
+        for item in response.data:
+            pro_st = item.get('pro_status', 'Pending')
+            colors = color_map.get(pro_st, default_color)
+            display_title = f"{item['title']} ({item['venue_name']})"
+
+            formatted.append({
+                'id': item['id'],
+                'title': display_title,
+                'start': item['start_time'],
+                'end': item['end_time'],
+                'backgroundColor': colors['bg'],
+                'borderColor': colors['border'],
+                'extendedProps': {
+                    'venue_name': item.get('venue_name'),
+                    'club_name': item.get('club_name'),
+                    'status': item.get('status'),
+                    'pro_status': pro_st,
+                    'assigned_to': item.get('assigned_to'),
+                }
+            })
+        return jsonify(formatted), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pro-event/<event_id>', methods=['GET'])
+@pro_required
+def get_pro_event_detail(event_id):
+    """Return full event detail including requested facilities for PRO review"""
+    try:
+        event = (
+            supabase.table('dashboard_events_view')
+            .select('*')
+            .eq('id', event_id)
+            .single()
+            .execute()
+        )
+
+        # Fetch requested facilities for this event
+        facilities = (
+            supabase.table('event_facilities')
+            .select('requested_quantity, facilities(id, f_name)')
+            .eq('event_id', event_id)
+            .execute()
+        )
+
+        fac_list = []
+        for f in facilities.data:
+            if f.get('facilities'):
+                fac_list.append({
+                    'name': f['facilities']['f_name'],
+                    'requested_quantity': f['requested_quantity']
+                })
+
+        result = event.data
+        result['requested_facilities'] = fac_list
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pro-event/<event_id>/respond', methods=['POST'])
+@pro_required
+def pro_respond_event(event_id):
+    """PRO submits a response — updates pro_status, pro_remarks, and optionally status"""
+    try:
+        data = request.get_json()
+        new_pro_status = data.get('pro_status')       # Approved / Rejected
+        pro_remarks = data.get('pro_remarks', '')
+
+        if new_pro_status not in ['Approved', 'Rejected']:
+            return jsonify({'error': 'Invalid pro_status value'}), 400
+
+        # Fetch event to check assigned_to
+        event = (
+            supabase.table('dashboard_events_view')
+            .select('assigned_to, status')
+            .eq('id', event_id)
+            .single()
+            .execute()
+        )
+
+        update_payload = {
+            'pro_status': new_pro_status,
+            'pro_remarks': pro_remarks,
+        }
+
+        # If the venue is directly under PRO authority, also update the main status
+        if event.data.get('assigned_to') == 'pro':
+            update_payload['status'] = new_pro_status
+
+        supabase.table('Events').update(update_payload).eq('id', event_id).execute()
+
+        return jsonify({'message': 'Response submitted successfully', 'updated': update_payload}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route("/forget_password", methods=["GET", "POST"])
 def forget_password():
