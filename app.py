@@ -14,6 +14,7 @@ import requests
 import json
 import time
 from werkzeug.utils import secure_filename
+from datetime import datetime
 
 try:
     r = requests.get("https://google.com")
@@ -118,6 +119,68 @@ def signup():
     return render_template("signup.html")
 
 
+@app.route("/hod/dashboard")
+@login_required
+def hod_dashboard():
+
+    pending_events = (
+        supabase.table("Events")
+        .select("*")
+        .eq("assigned_to", session["user"])
+        .eq("status", "Pending")
+        .execute()
+    )
+
+    approved_events = (
+        supabase.table("Events")
+        .select("*")
+        .eq("assigned_to", session["user"])
+        .eq("status", "Approved")
+        .execute()
+    )
+
+    rejected_events = (
+        supabase.table("Events")
+        .select("*")
+        .eq("assigned_to", session["user"])
+        .eq("status", "Rejected")
+        .execute()
+    )
+
+    return render_template(
+        "hod_dashboard.html",
+        pending_events=pending_events.data,
+        approved_events=approved_events.data,
+        rejected_events=rejected_events.data,
+        user_email=session["email"]
+    )
+    
+    
+@app.route("/approve-event/<event_id>", methods=["POST"])
+@login_required
+def approve_event(event_id):
+
+    supabase.table("Events").update({
+        "status": "Approved",
+        "approved_by": session["user"]
+    }).eq("id", event_id).execute()
+
+    return redirect(url_for("hod_dashboard"))
+
+@app.route("/reject-event/<event_id>", methods=["POST"])
+@login_required
+def reject_event(event_id):
+
+    remark = request.form.get("remark")
+
+    supabase.table("Events").update({
+        "status": "Rejected",
+        "approved_by": session["user"],
+        "rejection_reason": remark
+    }).eq("id", event_id).execute()
+
+    return redirect(url_for("hod_dashboard"))
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -142,7 +205,7 @@ def login():
                 session["user_name"] = user_record.data["user_name"]
                 role = session["role"]
                 if role.startswith("hod"):
-                    return redirect(url_for("dashboard"))
+                    return redirect(url_for("hod_dashboard"))
                 elif role == "pro":
                     return redirect(url_for("dashboard"))
                 elif role == "admin":
@@ -300,38 +363,53 @@ def create_event():
 
         if "user" in session:
             data["created_by"] = session["user"]
-        
+
         # 1. Grab the JSON string of facilities and convert it to a Python list
         facilities_to_insert = []
+
         if 'facilities_json' in data:
             facilities_list = json.loads(data['facilities_json'])
-            
-            # Format it exactly how our Supabase event_facilities table expects it
+
             for item in facilities_list:
                 facilities_to_insert.append({
                     "facility_id": item['id'],
                     "requested_quantity": item['quantity']
                 })
-            
-            # Remove the raw JSON string from the main data dictionary 
+
             data.pop('facilities_json', None)
 
         print("STEP 2")
-        # 2. Handle the File Upload
+
+        # 2. Handle File Upload
         permission_file = request.files.get('permission_file')
+
         print("STEP 3")
 
-
         if permission_file and permission_file.filename:
-            original_filename = secure_filename(permission_file.filename)
-            unique_filename = f"{int(time.time())}_{original_filename}"
+
+            original_filename = secure_filename(
+                permission_file.filename
+            )
+
+            unique_filename = (
+                f"{int(time.time())}_{original_filename}"
+            )
+
             file_bytes = permission_file.read()
+
             try:
-                service_supabase.storage.from_('approved_letters').upload(
+
+                service_supabase.storage.from_(
+                    'approved_letters'
+                ).upload(
                     file=file_bytes,
                     path=unique_filename,
-                    file_options={"content-type": permission_file.content_type}
+                    file_options={
+                        "content-type":
+                        permission_file.content_type
+                    }
                 )
+
                 print("UPLOAD SUCCESS")
 
             except Exception as e:
@@ -339,93 +417,77 @@ def create_event():
                 print(e)
                 raise
 
-            public_url = service_supabase.storage.from_('approved_letters').get_public_url(unique_filename)
+            public_url = (
+                service_supabase.storage
+                .from_('approved_letters')
+                .get_public_url(unique_filename)
+            )
 
             data['permission_file_url'] = public_url
-        print(public_url)
-        # Determine approval authority
+
         print("STEP 4")
+
+        # Auto assign HOD from venue
         venue_id = data.get("venue_id")
 
         venue_response = (
-    supabase.table("venues")
-    .select("name")
-    .eq("id", venue_id)
-    .single()
-    .execute()
-)
+            supabase.table("venues")
+            .select("hod_id")
+            .eq("id", venue_id)
+            .single()
+            .execute()
+        )
 
-        venue_name = venue_response.data["name"]
+        if venue_response.data:
+            data["assigned_to"] = (
+                venue_response.data["hod_id"]
+            )
 
-        if venue_name == "RB Seminar Hall":
-            data["assigned_to"] = "hod_cse"
-
-        elif venue_name == "EEE Seminar Hall":
-            data["assigned_to"] = "hod_eee"
-        
-        elif venue_name == "ME Seminar Hall":
-            data["assigned_to"] = "hod_me"
-
-        elif venue_name == "VB Seminar Hall":
-            data["assigned_to"] = "hod_ce"
-
-        elif venue_name in [
-    "Mini Auditorium",
-    "High-Tech Lab",
-    "AK Seminar Hall",
-    "AB Seminar Hall",
-]:
-            data["assigned_to"] = "pro"
-
-        else:
-            data["assigned_to"] = "pro"
-
-        data["status"] = "Pending Approval"
+        data["status"] = "Pending"
+        data["pro_status"] = "Pending"
 
         print("DATA BEING SENT:")
         print(data)
 
-        print("STEP 4")
+        # 3. Insert event
+        event_response = (
+            supabase.table("Events")
+            .insert(data)
+            .execute()
+        )
 
-        # 3. Insert the main data into the Events table
-        event_response = supabase.table('Events').insert(data).execute()
         print("EVENT INSERT SUCCESS")
-        
-        # Grab the newly generated Event ID
-        new_event_id = event_response.data[0]['id']
 
-        # 4. Insert the requested facilities into the junction table
+        new_event_id = event_response.data[0]["id"]
+
+        # 4. Insert facilities
         if facilities_to_insert:
-            # Attach the new event ID to every facility in the list
-            for f in facilities_to_insert:
-                f['event_id'] = new_event_id
-                
-            # Perform a bulk insert into event_facilities
+
+            for facility in facilities_to_insert:
+                facility["event_id"] = new_event_id
+
             print("TRYING FACILITY INSERT")
-            supabase.table('event_facilities').insert(facilities_to_insert).execute()
+
+            supabase.table(
+                "event_facilities"
+            ).insert(
+                facilities_to_insert
+            ).execute()
+
             print("FACILITY INSERT SUCCESS")
 
-        return jsonify({'message': 'Event created successfully!', 'data': event_response.data}), 201
-        
+        return jsonify({
+            "message": "Event created successfully!",
+            "data": event_response.data
+        }), 201
+
     except Exception as e:
-        print("ERROR DETAILS:", str(e)) 
-        return jsonify({'error': str(e)}), 500
 
-# ==================== Venue Route (Shows the HTML Page) ====================
-@app.route("/venue", methods=['GET'])
-def venue():
-    # Fetch all master lists from Supabase
-    locations_response = supabase.table("location").select("*").execute()
-    types_response = supabase.table("venue_type").select("*").execute()
-    facilities_response = supabase.table("facilities").select("*").execute()
+        print("ERROR DETAILS:", str(e))
 
-    # Pass the data to the HTML using Jinja
-    return render_template(
-        "venue.html", 
-        locations=locations_response.data,
-        venue_types=types_response.data,
-        facilities=facilities_response.data
-    )
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 # ==================== Venue API ====================
 @app.route("/venues", methods=["POST"])
