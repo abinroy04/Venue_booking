@@ -382,38 +382,49 @@ def get_pro_event_detail(event_id):
 def pro_respond_event(event_id):
     try:
         data = request.get_json()
-        new_pro_status = data.get('pro_status')
+        new_pro_status = data.get('pro_status') # 'Approved' or 'Rejected'
         pro_remarks = data.get('pro_remarks', '')
 
-        if new_pro_status not in ['Approved', 'Rejected']:
-            return jsonify({'error': 'Invalid pro_status value'}), 400
-
-        event = (
-            supabase.table('dashboard_events_view')
-            .select('assigned_to, status')
+        # 1. Fetch the full Event details
+        event_response = (
+            supabase.table('Events')
+            .select('*')
             .eq('id', event_id)
             .single()
             .execute()
         )
-        
-        update_payload = {
-            'pro_status': new_pro_status, 
-            'pro_remarks': pro_remarks
-        }
+        event = event_response.data
 
-        if event.data.get('assigned_to') == 'pro':
-            update_payload['status'] = new_pro_status
+        # 2. Update the PRO status in the Events table
+        supabase.table('Events').update({
+            'pro_status': new_pro_status,
+            'pro_remarks': pro_remarks,
+            'status': new_pro_status # Finalizing status
+        }).eq('id', event_id).execute()
 
-        (
-            supabase.table('Events')
-            .update(update_payload)
-            .eq('id', event_id)
-            .execute()
-        )
-        
-        return jsonify({'message': 'Response submitted successfully'}), 200
+        # 3. IF APPROVED: Move to 'bookings' table
+        if new_pro_status == 'Approved':
+            booking_data = {
+                "event_id": event['id'],
+                "venue_id": event['venue_id'],
+                "event_name": event['title'],
+                "event_description": event.get('description'),
+                "club_id": event.get('club_id'),
+                "booking_date": datetime.now().isoformat(), # Today is the day it was finalized
+                "start_time": event['start_time'],
+                "end_time": event['end_time'],
+                "approval_letter_path": event.get('permission_file_url'),
+                "approved_by": session['user'], # The PRO's UUID
+                "created_by": event['created_by'],
+                "created_at": event['created_at']
+            }
+            
+            supabase.table('bookings').insert(booking_data).execute()
+
+        return jsonify({'message': f'Event {new_pro_status} successfully'}), 200
         
     except Exception as e:
+        print("PRO Approval Error:", str(e))
         return jsonify({'error': str(e)}), 500
     
 # ==================== Admin Routes ====================
@@ -607,49 +618,48 @@ def create_event():
                 .get_public_url(unique_filename)
             )
 
-        # Dynamic HOD Assignment
-       # ==========================================
+        # ==========================================
         # Dynamic HOD Assignment (Updated for Depts)
         # ==========================================
         venue_id = data.get("venue_id")
         
-        # 1. Find which department owns this venue
+        # 1. Fetch Venue (Without .single() to avoid 0-row errors)
         venue_response = (
             supabase.table("venues")
             .select("department_id")
             .eq("id", venue_id)
-            .single()
             .execute()
         )
         
-        dept_id = venue_response.data.get("department_id")
+        # Safely extract department_id
+        dept_id = None
+        if venue_response.data and len(venue_response.data) > 0:
+            dept_id = venue_response.data[0].get("department_id")
         
         # 2. THE ROUTING ENGINE
         if dept_id:
-            # The venue belongs to a department. Let's find who the HOD is.
+            # Look up the HOD for that department
             dept_response = (
                 supabase.table("department")
                 .select("hod_id")
                 .eq("id", dept_id)
-                .single()
                 .execute()
             )
             
-            hod_id = dept_response.data.get("hod_id") if dept_response.data else None
-            
-            if hod_id:
-                # Assign to the HOD of that department
-                data["assigned_to"] = hod_id
+            # Safely extract hod_id
+            if dept_response.data and len(dept_response.data) > 0:
+                hod_id = dept_response.data[0].get("hod_id")
+                # If an HOD exists, assign to them. If NULL, assign to PRO.
+                data["assigned_to"] = hod_id if hod_id else "pro"
             else:
-                # Fallback: If the department exists but has no HOD assigned yet
-                data["assigned_to"] = "pro" 
+                data["assigned_to"] = "pro"
         else:
-            # If department_id is NULL, it's a common area (like an Auditorium)
+            # If the venue has no department_id, it goes to the PRO
             data["assigned_to"] = "pro"
 
         data["status"] = "Pending"
         data["pro_status"] = "Pending"
-        
+
         # Insert Event
         event_response = (
             supabase.table("Events")
