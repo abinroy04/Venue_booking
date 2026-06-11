@@ -124,6 +124,22 @@ def signup():
             
     return render_template("signup.html")
 
+@app.context_processor
+def inject_base_template():
+    # Default to user_base if not logged in or not defined
+    role = session.get("role", "student")
+    
+    if role == "admin":
+        base = "admin_base.html"
+    elif role == "pro":
+        base = "pro_base.html"
+    elif role.startswith("hod"):
+        base = "hod_base.html"
+    else:
+        base = "user_base.html"
+        
+    return dict(base_template=base)
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
