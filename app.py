@@ -782,6 +782,24 @@ def forget_password():
         
     return render_template("forget_password.html")
 
+@app.route("/calendar-redirect")
+def calendar_redirect():
+    # If not logged in, send them to the homepage calendar
+    if "user" not in session:
+        return redirect("/#calendar-section")
+        
+    role = session.get("role", "student")
+    
+    # Staff go to their respective dashboards
+    if role.startswith("hod"):
+        return redirect(url_for("hod_dashboard"))
+    elif role == "pro":
+        return redirect(url_for("pro_dashboard"))
+    elif role == "admin":
+        return redirect(url_for("admin_dashboard"))
+    else:
+        # Students/Normal users go to the homepage calendar
+        return redirect("/#calendar-section")
 if __name__ == "__main__":
     app.run(
         host=os.getenv("APP_HOST", "127.0.0.1"),

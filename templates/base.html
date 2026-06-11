@@ -47,9 +47,11 @@
             </button>
         </div>
         <nav class="p-4 flex-grow space-y-2 overflow-y-auto">
-            <a href="/#calendar-section" class="block px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+            
+            <a href="/calendar-redirect" class="block px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
                 Calendar
             </a>
+            
             {% block mobile_links %}{% endblock %}
         </nav>
     </div>
@@ -75,9 +77,11 @@
                 </div>
 
                 <nav class="hidden md:flex space-x-1 items-center ml-[590px]">
-                    <a href="/#calendar-section" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+                    
+                    <a href="/calendar-redirect" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
                         Calendar
                     </a>
+                    
                     {% block desktop_links %}{% endblock %}
                 </nav>
                 
@@ -95,7 +99,7 @@
 
                         <div id="profile-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 hidden py-2 z-50 transition-all origin-top-right">
                             <a href="/profile" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Profile</a>
-                            <a href="/dashboard" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Dashboard</a>
+                            <a href="/my-dashboard" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Dashboard</a>
                             <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">Settings</a>
                             
                             <div class="border-t border-slate-100 my-1"></div>
@@ -182,6 +186,11 @@
                 });
             }
         });
+
+        // ADDED: Universal Calendar Click Handler
+        function handleCalendarEventClick(info) {
+            window.location.href = "/dashboard/redirect/" + info.event.id;
+        }
     </script>
 
     {% block extra_js %}{% endblock %}
