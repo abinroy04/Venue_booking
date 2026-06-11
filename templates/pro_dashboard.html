@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "pro_base.html" %}
 {% block title %}PRO Dashboard | Venue Booking Portal{% endblock %}
 
 {% block extra_css %}
@@ -17,39 +17,48 @@
         --fc-button-active-border-color: #1e40af;
         --fc-today-bg-color: #eff6ff;
     }
+
     .fc .fc-toolbar-title {
         font-size: 1.25rem;
         font-weight: 700;
         color: #0f172a;
     }
+
     @media (min-width: 768px) {
-        .fc .fc-toolbar-title { font-size: 1.5rem; }
+        .fc .fc-toolbar-title {
+            font-size: 1.5rem;
+        }
     }
+
     .fc .fc-col-header-cell-cushion {
         color: #475569;
         font-weight: 600;
         font-size: 0.8rem;
         padding: 8px 0;
     }
+
     .fc .fc-daygrid-day-number {
         color: #64748b;
         font-size: 0.85rem;
         font-weight: 500;
         padding: 6px 8px;
     }
+
     .fc .fc-event {
         border-radius: 6px;
         padding: 2px 6px;
         font-weight: 600;
         font-size: 0.7rem;
-        box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+
     .fc .fc-event:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px -2px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.15);
     }
+
     .fc .fc-button {
         border-radius: 8px;
         font-weight: 600;
@@ -57,6 +66,7 @@
         text-transform: capitalize;
         padding: 6px 14px;
     }
+
     .fc .fc-button-primary:disabled {
         background-color: #94a3b8;
         border-color: #94a3b8;
@@ -75,12 +85,14 @@
         z-index: 80;
         transform: translateX(100%);
         transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-        box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+        box-shadow: -8px 0 30px rgba(0, 0, 0, 0.12);
         overflow-y: auto;
     }
+
     .pro-detail-panel.open {
         transform: translateX(0);
     }
+
     .pro-panel-overlay {
         position: fixed;
         inset: 0;
@@ -90,6 +102,7 @@
         pointer-events: none;
         transition: opacity 0.3s ease;
     }
+
     .pro-panel-overlay.open {
         opacity: 1;
         pointer-events: auto;
@@ -107,15 +120,17 @@
     .stat-card {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
     .stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 25px -5px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
     /* Table row hover */
     .pro-table-row {
         transition: background-color 0.15s ease;
     }
+
     .pro-table-row:hover {
         background-color: #f8fafc;
     }
@@ -129,15 +144,30 @@
         height: 24px;
         animation: spin 0.7s linear infinite;
     }
+
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /* Scrollbar for panel */
-    .pro-detail-panel::-webkit-scrollbar { width: 6px; }
-    .pro-detail-panel::-webkit-scrollbar-track { background: #f8fafc; }
-    .pro-detail-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-    .pro-detail-panel::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .pro-detail-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .pro-detail-panel::-webkit-scrollbar-track {
+        background: #f8fafc;
+    }
+
+    .pro-detail-panel::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    .pro-detail-panel::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 </style>
 {% endblock %}
 
@@ -148,12 +178,16 @@
     <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
             <div class="flex items-center gap-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                 </div>
-                <span class="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">PRO Dashboard</span>
+                <span
+                    class="text-xs font-bold text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-full">PRO
+                    Dashboard</span>
             </div>
             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">
                 Welcome, {{ user_name }}
@@ -186,7 +220,8 @@
         <div class="stat-card bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
             </div>
             <div>
@@ -199,7 +234,8 @@
         <div class="stat-card bg-white rounded-2xl border border-amber-100 shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             <div>
@@ -214,7 +250,8 @@
         <div class="stat-card bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             <div>
@@ -229,7 +266,8 @@
         <div class="stat-card bg-white rounded-2xl border border-red-100 shadow-sm p-5 flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </div>
             <div>
@@ -246,12 +284,16 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
                 <h2 class="text-xl font-bold text-slate-900">Event Review Calendar</h2>
-                <p class="text-sm text-slate-400 mt-0.5">Click any event to review details, view permission letter, and submit your response.</p>
+                <p class="text-sm text-slate-400 mt-0.5">Click any event to review details, view permission letter, and
+                    submit your response.</p>
             </div>
             <!-- Venue filter -->
             <div class="w-full md:w-64 shrink-0">
-                <label for="pro-venue-filter" class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter By Venue</label>
-                <select id="pro-venue-filter" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all cursor-pointer">
+                <label for="pro-venue-filter"
+                    class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter By
+                    Venue</label>
+                <select id="pro-venue-filter"
+                    class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all cursor-pointer">
                     <option value="">All Venues</option>
                 </select>
             </div>
@@ -264,14 +306,19 @@
         <div class="p-5 border-b border-slate-100 flex items-center justify-between">
             <div>
                 <h2 id="table-title" class="text-lg font-bold text-slate-900">All Booking Requests</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Click "Review" to open event details and submit your response.</p>
+                <p class="text-xs text-slate-400 mt-0.5">Click "Review" to open event details and submit your response.
+                </p>
             </div>
             <!-- Filter tabs -->
             <div class="hidden md:flex bg-slate-100 rounded-lg p-0.5 gap-0.5">
-                <button onclick="filterTable('all')" id="tab-all" class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all bg-white text-slate-800 shadow-sm">All</button>
-                <button onclick="filterTable('Pending')" id="tab-Pending" class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Pending</button>
-                <button onclick="filterTable('Approved')" id="tab-Approved" class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Approved</button>
-                <button onclick="filterTable('Rejected')" id="tab-Rejected" class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Rejected</button>
+                <button onclick="filterTable('all')" id="tab-all"
+                    class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all bg-white text-slate-800 shadow-sm">All</button>
+                <button onclick="filterTable('Pending')" id="tab-Pending"
+                    class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Pending</button>
+                <button onclick="filterTable('Approved')" id="tab-Approved"
+                    class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Approved</button>
+                <button onclick="filterTable('Rejected')" id="tab-Rejected"
+                    class="pro-tab px-3 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 hover:text-slate-700">Rejected</button>
             </div>
         </div>
 
@@ -279,18 +326,26 @@
             <table class="w-full" id="pro-events-table">
                 <thead class="bg-slate-50/80">
                     <tr>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Event</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Venue</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Venue Approval</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Facility Status</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Authority</th>
-                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Action</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Event</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Venue</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Date
+                        </th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Venue Approval</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Facility Status</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Authority</th>
+                        <th class="text-left px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for event in events %}
-                    <tr class="border-t border-slate-100 pro-table-row" data-pro-status="{{ event.pro_status }}" data-date="{{ event.start_time[:10] }}">
+                    <tr class="border-t border-slate-100 pro-table-row" data-pro-status="{{ event.pro_status }}"
+                        data-date="{{ event.start_time[:10] }}">
                         <td class="px-5 py-4">
                             <div class="font-semibold text-slate-800 text-sm">{{ event.title }}</div>
                             <div class="text-xs text-slate-400 mt-0.5">{{ event.club_name }}</div>
@@ -299,54 +354,61 @@
                         <td class="px-5 py-4 text-sm text-slate-600">{{ event.start_time[:10] }}</td>
                         <td class="px-5 py-4">
                             {% if event.status == 'Approved' %}
-                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Approved
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Approved
+                            </span>
                             {% elif event.status == 'Pending Approval' %}
-                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                            </span>
                             {% elif event.status == 'Rejected' %}
-                                <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rejected
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rejected
+                            </span>
                             {% else %}
-                                <span class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-slate-200">
-                                    {{ event.status }}
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-slate-200">
+                                {{ event.status }}
+                            </span>
                             {% endif %}
                         </td>
                         <td class="px-5 py-4">
                             {% if event.pro_status == 'Approved' %}
-                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Approved
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Approved
+                            </span>
                             {% elif event.pro_status == 'Pending' %}
-                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                            </span>
                             {% else %}
-                                <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rejected
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-red-50 text-red-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-red-200">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rejected
+                            </span>
                             {% endif %}
                         </td>
                         <td class="px-5 py-4">
                             {% if event.assigned_to == 'pro' %}
-                                <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-200">
-                                    PRO
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-indigo-200">
+                                PRO
+                            </span>
                             {% else %}
-                                <span class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-slate-200">
-                                    {{ event.assigned_to | upper }}
-                                </span>
+                            <span
+                                class="inline-flex items-center gap-1 bg-slate-50 text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold border border-slate-200">
+                                {{ event.assigned_to | upper }}
+                            </span>
                             {% endif %}
                         </td>
                         <td class="px-5 py-4">
-                            <button
-                                onclick="openProPanel('{{ event.id }}')"
-                                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm"
-                            >
+                            <button onclick="openProPanel('{{ event.id }}')"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 active:scale-[0.97] transition-all shadow-sm">
                                 Review
                             </button>
                         </td>
@@ -366,9 +428,11 @@
 <div id="pro-detail-panel" class="pro-detail-panel">
 
     <!-- Panel Header -->
-    <div class="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+    <div
+        class="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
         <h2 class="text-lg font-bold text-slate-900">Event Review</h2>
-        <button onclick="closeProPanel()" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+        <button onclick="closeProPanel()"
+            class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -391,225 +455,225 @@
 <!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    // ======================== CALENDAR ========================
+        // ======================== CALENDAR ========================
 
-    const venueFilter = document.getElementById('pro-venue-filter');
-    let allCalendarEvents = [];
+        const venueFilter = document.getElementById('pro-venue-filter');
+        let allCalendarEvents = [];
 
-    // Populate venue filter
-    async function populateVenueFilter() {
-        try {
-            const res = await fetch('/api/venues');
-            if (!res.ok) throw new Error('Failed to fetch venues');
-            const venues = await res.json();
-            venues.forEach(v => {
-                const opt = document.createElement('option');
-                opt.value = v.id;
-                opt.textContent = v.name;
-                venueFilter.appendChild(opt);
+        // Populate venue filter
+        async function populateVenueFilter() {
+            try {
+                const res = await fetch('/api/venues');
+                if (!res.ok) throw new Error('Failed to fetch venues');
+                const venues = await res.json();
+                venues.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.name;
+                    venueFilter.appendChild(opt);
+                });
+            } catch (e) { console.error('Venue filter error:', e); }
+        }
+
+        const calendarEl = document.getElementById('pro-calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            nowIndicator: true,
+            navLinks: true,
+            selectable: false,
+            eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            height: 'auto',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek'
+            },
+            events: function (info, successCallback, failureCallback) {
+                if (allCalendarEvents.length === 0) {
+                    fetch('/api/pro-calendar-events')
+                        .then(r => { if (!r.ok) throw new Error('Fetch failed'); return r.json(); })
+                        .then(data => {
+                            allCalendarEvents = data;
+                            successCallback(processForBackground(filterByVenue(data)));
+                        })
+                        .catch(err => {
+                            console.error('Calendar events error:', err);
+                            failureCallback(err);
+                        });
+                } else {
+                    successCallback(processForBackground(filterByVenue(allCalendarEvents)));
+                }
+            },
+            dateClick: function (info) {
+                filterTableByDate(info.dateStr);
+                document.getElementById('pro-events-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        calendar.render();
+        populateVenueFilter();
+
+        function processForBackground(events) {
+            const eventsByDate = {};
+            events.forEach(e => {
+                const dateStr = e.start.split('T')[0];
+                if (!eventsByDate[dateStr]) {
+                    eventsByDate[dateStr] = { pending: 0, approved: 0, rejected: 0 };
+                }
+                if (e.extendedProps.pro_status === 'Pending') eventsByDate[dateStr].pending++;
+                else if (e.extendedProps.pro_status === 'Approved') eventsByDate[dateStr].approved++;
+                else if (e.extendedProps.pro_status === 'Rejected') eventsByDate[dateStr].rejected++;
             });
-        } catch(e) { console.error('Venue filter error:', e); }
-    }
 
-    const calendarEl = document.getElementById('pro-calendar');
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        nowIndicator: true,
-        navLinks: true,
-        selectable: false,
-        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-        height: 'auto',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-        },
-        events: function(info, successCallback, failureCallback) {
-            if (allCalendarEvents.length === 0) {
-                fetch('/api/pro-calendar-events')
-                    .then(r => { if (!r.ok) throw new Error('Fetch failed'); return r.json(); })
-                    .then(data => {
-                        allCalendarEvents = data;
-                        successCallback(processForBackground(filterByVenue(data)));
-                    })
-                    .catch(err => {
-                        console.error('Calendar events error:', err);
-                        failureCallback(err);
-                    });
-            } else {
-                successCallback(processForBackground(filterByVenue(allCalendarEvents)));
+            const bgEvents = [];
+            for (const dateStr in eventsByDate) {
+                const counts = eventsByDate[dateStr];
+                // Colors: light amber for pending, light green for approved, light red for rejected
+                let bgColor = '#fde68a'; // default pending
+
+                if (counts.pending > 0) bgColor = '#fde68a';
+                else if (counts.approved > 0) bgColor = '#a7f3d0';
+                else if (counts.rejected > 0) bgColor = '#fca5a5';
+
+                bgEvents.push({
+                    start: dateStr,
+                    display: 'background',
+                    backgroundColor: bgColor,
+                });
             }
-        },
-        dateClick: function(info) {
-            filterTableByDate(info.dateStr);
-            document.getElementById('pro-events-table').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return bgEvents;
         }
-    });
 
-    calendar.render();
-    populateVenueFilter();
+        function filterByVenue(events) {
+            const selectedId = venueFilter.value;
+            if (!selectedId) return events;
+            const selectedName = venueFilter.options[venueFilter.selectedIndex]?.text;
+            return events.filter(e => e.title.includes(`(${selectedName})`));
+        }
 
-    function processForBackground(events) {
-        const eventsByDate = {};
-        events.forEach(e => {
-            const dateStr = e.start.split('T')[0];
-            if (!eventsByDate[dateStr]) {
-                eventsByDate[dateStr] = { pending: 0, approved: 0, rejected: 0 };
-            }
-            if (e.extendedProps.pro_status === 'Pending') eventsByDate[dateStr].pending++;
-            else if (e.extendedProps.pro_status === 'Approved') eventsByDate[dateStr].approved++;
-            else if (e.extendedProps.pro_status === 'Rejected') eventsByDate[dateStr].rejected++;
+        venueFilter.addEventListener('change', function () {
+            calendar.refetchEvents();
         });
 
-        const bgEvents = [];
-        for (const dateStr in eventsByDate) {
-            const counts = eventsByDate[dateStr];
-            // Colors: light amber for pending, light green for approved, light red for rejected
-            let bgColor = '#fde68a'; // default pending
-            
-            if (counts.pending > 0) bgColor = '#fde68a';
-            else if (counts.approved > 0) bgColor = '#a7f3d0';
-            else if (counts.rejected > 0) bgColor = '#fca5a5';
+        // ======================== TABLE FILTER ========================
 
-            bgEvents.push({
-                start: dateStr,
-                display: 'background',
-                backgroundColor: bgColor,
+        window.filterTable = function (status) {
+            // Update tab styles
+            document.querySelectorAll('.pro-tab').forEach(tab => {
+                tab.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+                tab.classList.add('text-slate-500');
             });
-        }
-        return bgEvents;
-    }
-
-    function filterByVenue(events) {
-        const selectedId = venueFilter.value;
-        if (!selectedId) return events;
-        const selectedName = venueFilter.options[venueFilter.selectedIndex]?.text;
-        return events.filter(e => e.title.includes(`(${selectedName})`));
-    }
-
-    venueFilter.addEventListener('change', function() {
-        calendar.refetchEvents();
-    });
-
-    // ======================== TABLE FILTER ========================
-
-    window.filterTable = function(status) {
-        // Update tab styles
-        document.querySelectorAll('.pro-tab').forEach(tab => {
-            tab.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
-            tab.classList.add('text-slate-500');
-        });
-        const activeTab = document.getElementById('tab-' + status);
-        if (activeTab) {
-            activeTab.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
-            activeTab.classList.remove('text-slate-500');
-        }
-
-        const tableTitle = document.getElementById('table-title');
-        if (tableTitle) {
-            tableTitle.textContent = status === 'all' ? 'All Booking Requests' : `${status} Booking Requests`;
-        }
-
-        const rows = document.querySelectorAll('#pro-events-table tbody tr');
-        rows.forEach(row => {
-            if (status === 'all') {
-                row.style.display = '';
-            } else {
-                row.style.display = row.dataset.proStatus === status ? '' : 'none';
+            const activeTab = document.getElementById('tab-' + status);
+            if (activeTab) {
+                activeTab.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+                activeTab.classList.remove('text-slate-500');
             }
-        });
-    };
 
-    window.filterTableByDate = function(dateStr) {
-        // Reset status tabs
-        document.querySelectorAll('.pro-tab').forEach(tab => {
-            tab.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
-            tab.classList.add('text-slate-500');
-        });
-
-        const rows = document.querySelectorAll('#pro-events-table tbody tr');
-        let count = 0;
-        rows.forEach(row => {
-            if (row.dataset.date === dateStr) {
-                row.style.display = '';
-                count++;
-            } else {
-                row.style.display = 'none';
+            const tableTitle = document.getElementById('table-title');
+            if (tableTitle) {
+                tableTitle.textContent = status === 'all' ? 'All Booking Requests' : `${status} Booking Requests`;
             }
-        });
 
-        const tableTitle = document.getElementById('table-title');
-        if (tableTitle) {
-            tableTitle.textContent = count > 0 ? `Events on ${dateStr}` : `No Events on ${dateStr}`;
-        }
-    };
+            const rows = document.querySelectorAll('#pro-events-table tbody tr');
+            rows.forEach(row => {
+                if (status === 'all') {
+                    row.style.display = '';
+                } else {
+                    row.style.display = row.dataset.proStatus === status ? '' : 'none';
+                }
+            });
+        };
 
-    // ======================== DETAIL PANEL ========================
+        window.filterTableByDate = function (dateStr) {
+            // Reset status tabs
+            document.querySelectorAll('.pro-tab').forEach(tab => {
+                tab.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+                tab.classList.add('text-slate-500');
+            });
 
-    const panel = document.getElementById('pro-detail-panel');
-    const overlay = document.getElementById('pro-panel-overlay');
-    const panelContent = document.getElementById('pro-panel-content');
+            const rows = document.querySelectorAll('#pro-events-table tbody tr');
+            let count = 0;
+            rows.forEach(row => {
+                if (row.dataset.date === dateStr) {
+                    row.style.display = '';
+                    count++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
 
-    window.openProPanel = async function(eventId) {
-        panel.classList.add('open');
-        overlay.classList.add('open');
-        document.body.style.overflow = 'hidden';
+            const tableTitle = document.getElementById('table-title');
+            if (tableTitle) {
+                tableTitle.textContent = count > 0 ? `Events on ${dateStr}` : `No Events on ${dateStr}`;
+            }
+        };
 
-        panelContent.innerHTML = `
+        // ======================== DETAIL PANEL ========================
+
+        const panel = document.getElementById('pro-detail-panel');
+        const overlay = document.getElementById('pro-panel-overlay');
+        const panelContent = document.getElementById('pro-panel-content');
+
+        window.openProPanel = async function (eventId) {
+            panel.classList.add('open');
+            overlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+
+            panelContent.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 gap-3">
                 <div class="pro-spinner"></div>
                 <span class="text-sm font-medium text-slate-400">Loading event details...</span>
             </div>
         `;
 
-        try {
-            const res = await fetch(`/api/pro-event/${eventId}`);
-            if (!res.ok) throw new Error('Failed to fetch event');
-            const evt = await res.json();
-            renderPanelContent(evt);
-        } catch(e) {
-            panelContent.innerHTML = `
+            try {
+                const res = await fetch(`/api/pro-event/${eventId}`);
+                if (!res.ok) throw new Error('Failed to fetch event');
+                const evt = await res.json();
+                renderPanelContent(evt);
+            } catch (e) {
+                panelContent.innerHTML = `
                 <div class="text-center py-20">
                     <p class="text-red-500 font-semibold">Failed to load event details.</p>
                     <p class="text-slate-400 text-sm mt-1">${e.message}</p>
                 </div>
             `;
-        }
-    };
+            }
+        };
 
-    window.closeProPanel = function() {
-        panel.classList.remove('open');
-        overlay.classList.remove('open');
-        document.body.style.overflow = '';
-    };
+        window.closeProPanel = function () {
+            panel.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+        };
 
-    // Close panel on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeProPanel();
-    });
+        // Close panel on Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeProPanel();
+        });
 
-    function renderPanelContent(evt) {
-        const startFormatted = evt.start_time ? evt.start_time.replace('T', '  ').slice(0, 17) : 'N/A';
-        const endFormatted = evt.end_time ? evt.end_time.replace('T', '  ').slice(0, 17) : 'N/A';
+        function renderPanelContent(evt) {
+            const startFormatted = evt.start_time ? evt.start_time.replace('T', '  ').slice(0, 17) : 'N/A';
+            const endFormatted = evt.end_time ? evt.end_time.replace('T', '  ').slice(0, 17) : 'N/A';
 
-        // Status badge helper
-        function statusBadge(status, type) {
-            const colors = {
-                'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                'Pending': 'bg-amber-50 text-amber-700 border-amber-200',
-                'Pending Approval': 'bg-amber-50 text-amber-700 border-amber-200',
-                'Rejected': 'bg-red-50 text-red-700 border-red-200',
-            };
-            const c = colors[status] || 'bg-slate-50 text-slate-600 border-slate-200';
-            return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${c}">${status}</span>`;
-        }
+            // Status badge helper
+            function statusBadge(status, type) {
+                const colors = {
+                    'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    'Pending': 'bg-amber-50 text-amber-700 border-amber-200',
+                    'Pending Approval': 'bg-amber-50 text-amber-700 border-amber-200',
+                    'Rejected': 'bg-red-50 text-red-700 border-red-200',
+                };
+                const c = colors[status] || 'bg-slate-50 text-slate-600 border-slate-200';
+                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${c}">${status}</span>`;
+            }
 
-        // Facilities table rows
-        let facilitiesHTML = '';
-        if (evt.requested_facilities && evt.requested_facilities.length > 0) {
-            facilitiesHTML = evt.requested_facilities.map((f, i) => `
+            // Facilities table rows
+            let facilitiesHTML = '';
+            if (evt.requested_facilities && evt.requested_facilities.length > 0) {
+                facilitiesHTML = evt.requested_facilities.map((f, i) => `
                 <tr class="${i % 2 === 0 ? 'bg-slate-50/50' : ''}">
                     <td class="px-4 py-2.5 text-sm font-medium text-slate-700">${f.name}</td>
                     <td class="px-4 py-2.5 text-sm text-slate-600 text-center">
@@ -617,14 +681,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                 </tr>
             `).join('');
-        } else {
-            facilitiesHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-sm text-slate-400 italic">No facilities requested for this event.</td></tr>`;
-        }
+            } else {
+                facilitiesHTML = `<tr><td colspan="2" class="px-4 py-6 text-center text-sm text-slate-400 italic">No facilities requested for this event.</td></tr>`;
+            }
 
-        // Is this event already responded to?
-        const isResponded = evt.pro_status === 'Approved' || evt.pro_status === 'Rejected';
+            // Is this event already responded to?
+            const isResponded = evt.pro_status === 'Approved' || evt.pro_status === 'Rejected';
 
-        panelContent.innerHTML = `
+            panelContent.innerHTML = `
             <!-- Event Title -->
             <div class="space-y-1.5">
                 <h3 class="text-xl font-extrabold text-slate-900">${evt.title || 'Untitled Event'}</h3>
@@ -803,58 +867,58 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
 
-        // Attach form submit handler
-        const form = document.getElementById('pro-response-form');
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const eventId = this.dataset.eventId;
-            const proStatus = document.getElementById('pro-status-select').value;
-            const proRemarks = document.getElementById('pro-remarks-input').value;
-            const submitBtn = document.getElementById('pro-submit-btn');
-            const statusDiv = document.getElementById('pro-submit-status');
+            // Attach form submit handler
+            const form = document.getElementById('pro-response-form');
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const eventId = this.dataset.eventId;
+                const proStatus = document.getElementById('pro-status-select').value;
+                const proRemarks = document.getElementById('pro-remarks-input').value;
+                const submitBtn = document.getElementById('pro-submit-btn');
+                const statusDiv = document.getElementById('pro-submit-status');
 
-            if (!proStatus) {
-                statusDiv.textContent = '⚠️ Please select a decision.';
-                statusDiv.className = 'text-center text-sm font-semibold text-amber-600 block';
-                return;
-            }
-
-            submitBtn.textContent = 'Submitting...';
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-70', 'cursor-wait');
-            statusDiv.classList.add('hidden');
-
-            try {
-                const res = await fetch(`/api/pro-event/${eventId}/respond`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ pro_status: proStatus, pro_remarks: proRemarks })
-                });
-                const result = await res.json();
-
-                if (res.ok) {
-                    statusDiv.textContent = '✅ Response submitted successfully!';
-                    statusDiv.className = 'text-center text-sm font-bold text-emerald-600 block';
-
-                    // Refresh calendar and page after a short delay
-                    setTimeout(() => {
-                        allCalendarEvents = [];
-                        calendar.refetchEvents();
-                        location.reload();
-                    }, 1200);
-                } else {
-                    throw new Error(result.error || 'Failed to submit');
+                if (!proStatus) {
+                    statusDiv.textContent = '⚠️ Please select a decision.';
+                    statusDiv.className = 'text-center text-sm font-semibold text-amber-600 block';
+                    return;
                 }
-            } catch(err) {
-                statusDiv.textContent = '❌ ' + err.message;
-                statusDiv.className = 'text-center text-sm font-bold text-red-600 block';
-            } finally {
-                submitBtn.textContent = 'Submit Response';
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-70', 'cursor-wait');
-            }
-        });
-    }
-});
+
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-70', 'cursor-wait');
+                statusDiv.classList.add('hidden');
+
+                try {
+                    const res = await fetch(`/api/pro-event/${eventId}/respond`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pro_status: proStatus, pro_remarks: proRemarks })
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        statusDiv.textContent = '✅ Response submitted successfully!';
+                        statusDiv.className = 'text-center text-sm font-bold text-emerald-600 block';
+
+                        // Refresh calendar and page after a short delay
+                        setTimeout(() => {
+                            allCalendarEvents = [];
+                            calendar.refetchEvents();
+                            location.reload();
+                        }, 1200);
+                    } else {
+                        throw new Error(result.error || 'Failed to submit');
+                    }
+                } catch (err) {
+                    statusDiv.textContent = '❌ ' + err.message;
+                    statusDiv.className = 'text-center text-sm font-bold text-red-600 block';
+                } finally {
+                    submitBtn.textContent = 'Submit Response';
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-70', 'cursor-wait');
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}
