@@ -426,16 +426,40 @@ def admin_dashboard():
 @app.route("/admin/users")
 @admin_required
 def admin_users():
-    # We moved the User table here!
-    users_response = supabase.table("users").select("*").order("created_at", desc=True).execute()
-    return render_template(
-        "admin_users.html", 
-        users=users_response.data,
-        user_name=session.get("user_name")
-    )
+    # Security check
+    if session.get("role") != "admin":
+        return redirect("/calendar-redirect")
+        
+    # Fetch all users for the table
+    users_response = supabase.table("users").select("*").execute()
+    users = users_response.data
+    
+    # NEW: Fetch departments for the dynamic dropdown
+    dept_response = supabase.table("department").select("id, name").execute()
+    departments = dept_response.data
+
+    return render_template("admin_users.html", users=users, departments=departments)
+
+from flask import request, jsonify
+
+@app.route("/api/admin/users/add", methods=["POST"])
+@login_required # (Or @admin_required)
+def api_add_user():
+    # Make sure only admins can do this
+    if session.get("role") != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    data = request.json
+    
+    email = data.get("email")
+    password = data.get("password")
+    user_name = data.get("user_name")
+    phone_number = data.get("contact_number")
+    role = data.get("role")
+    department_id = data.get("department") # This is the UUID from the dropdown
 
     try:
-        # 1. Create the user in Supabase Authentication Vault using God Mode key
+        # 1. Create user in Supabase Auth (Must use service_supabase/God Mode key)
         auth_response = service_supabase.auth.admin.create_user({
             "email": email,
             "password": password,
@@ -443,40 +467,100 @@ def admin_users():
         })
         new_user_id = auth_response.user.id
 
-        # 2. Add their profile to our public users table
-        supabase.table("users").insert({
+        # 2. Add profile to our public users table
+        user_insert_data = {
             "id": new_user_id,
             "email": email,
             "user_name": user_name,
+            "phone_number": phone_number,
             "role": role,
-            "is_active": True
-        }).execute()
+            # If they are Admin or PRO, department is null. Otherwise, save the UUID.
+            "department_id": department_id if role in ['student', 'hod'] else None
+        }
+        supabase.table("users").insert(user_insert_data).execute()
 
-        # 3. Auto-link HOD to their Department!
-        if role.startswith("hod_"):
-            department_mapping = {
-                "hod_cse": "Computer Science (CSE)",
-                "hod_eee": "Electrical & Electronics (EEE)",
-                "hod_ce":  "Civil Engineering (CE)",
-                "hod_me":  "Mechanical Engineering (ME)",
-                "hod_ece": "Electronics & Communication (ECE)",
-                "hod_ra":  "Robotics & Automation (RA)"
-            }
-            target_dept_name = department_mapping.get(role)
-            if target_dept_name:
-                supabase.table("department").update({
-                    "hod_name": role,
-                    "hod_id": new_user_id
-                }).eq("name", target_dept_name).execute()
+        # 3. Auto-link HOD to their Department
+        if role == "hod" and department_id:
+            supabase.table("department").update({
+                "hod_name": user_name,
+                "hod_id": new_user_id
+            }).eq("id", department_id).execute()
 
-        flash(f"User {user_name} created successfully!", "success")
+        # Tell Javascript it was a success! (This triggers the green toast)
+        return jsonify({"success": True, "message": "User created successfully!"}), 200
         
     except Exception as e:
         print("Error creating user:", e)
-        flash(f"Failed to create user. They might already exist.", "error")
-        
-    return redirect(url_for("admin_dashboard"))
+        # Tell Javascript there was an error
+        return jsonify({"error": str(e)}), 500
 
+@app.route("/api/admin/users/edit", methods=["PUT"])
+@admin_required
+def api_edit_user():
+    data = request.json
+    user_id = data.get("user_id")
+    email = data.get("email")
+    password = data.get("password") # Optional
+    user_name = data.get("user_name")
+    phone_number = data.get("contact_number")
+    role = data.get("role")
+    department_id = data.get("department")
+
+    try:
+        # 1. Update Supabase Auth Details
+        auth_update = {"email": email}
+        if password: # Only update password if they typed a new one
+            auth_update["password"] = password
+            
+        service_supabase.auth.admin.update_user_by_id(user_id, auth_update)
+
+        # 2. Update Public Users Table
+        user_update_data = {
+            "email": email,
+            "user_name": user_name,
+            "phone_number": phone_number,
+            "role": role,
+            "department_id": department_id if role in ['student', 'hod'] else None
+        }
+        supabase.table("users").update(user_update_data).eq("id", user_id).execute()
+
+        # 3. Handle HOD reassignment if applicable
+        if role == "hod" and department_id:
+            supabase.table("department").update({
+                "hod_name": user_name,
+                "hod_id": user_id
+            }).eq("id", department_id).execute()
+
+        return jsonify({"success": True, "message": "User updated successfully!"}), 200
+
+    except Exception as e:
+        print("Error updating user:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/users/delete/<user_id>", methods=["DELETE"])
+@admin_required
+def api_delete_user(user_id):
+    try:
+        # 1. First, check if they are an HOD and remove them from the department table
+        supabase.table("department").update({
+            "hod_name": None,
+            "hod_id": None
+        }).eq("hod_id", user_id).execute()
+
+        # 2. Delete from public users table
+        supabase.table("users").delete().eq("id", user_id).execute()
+
+        # 3. Permanently Delete from Supabase Authentication
+        # (This completely wipes their ability to log in)
+        service_supabase.auth.admin.delete_user(user_id)
+
+        return jsonify({"success": True, "message": "User permanently deleted."}), 200
+
+    except Exception as e:
+        print("Error deleting user:", e)
+        return jsonify({"error": str(e)}), 500
+   
 
 # ==================== Creation Routes ====================
 @app.route('/event')
@@ -524,23 +608,48 @@ def create_event():
             )
 
         # Dynamic HOD Assignment
+       # ==========================================
+        # Dynamic HOD Assignment (Updated for Depts)
+        # ==========================================
         venue_id = data.get("venue_id")
+        
+        # 1. Find which department owns this venue
         venue_response = (
             supabase.table("venues")
-            .select("hod_id")
+            .select("department_id")
             .eq("id", venue_id)
             .single()
             .execute()
         )
         
-        if venue_response.data and venue_response.data.get("hod_id"):
-            data["assigned_to"] = venue_response.data["hod_id"]
+        dept_id = venue_response.data.get("department_id")
+        
+        # 2. THE ROUTING ENGINE
+        if dept_id:
+            # The venue belongs to a department. Let's find who the HOD is.
+            dept_response = (
+                supabase.table("department")
+                .select("hod_id")
+                .eq("id", dept_id)
+                .single()
+                .execute()
+            )
+            
+            hod_id = dept_response.data.get("hod_id") if dept_response.data else None
+            
+            if hod_id:
+                # Assign to the HOD of that department
+                data["assigned_to"] = hod_id
+            else:
+                # Fallback: If the department exists but has no HOD assigned yet
+                data["assigned_to"] = "pro" 
         else:
+            # If department_id is NULL, it's a common area (like an Auditorium)
             data["assigned_to"] = "pro"
 
         data["status"] = "Pending"
         data["pro_status"] = "Pending"
-
+        
         # Insert Event
         event_response = (
             supabase.table("Events")
