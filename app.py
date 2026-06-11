@@ -62,6 +62,16 @@ def pro_required(f):
             
         return f(*args, **kwargs)
     return decorated_function
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        if session.get("role") != "admin":
+            flash("Access denied. Admin role required.", "error")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # ==================== Auth Routes ====================
@@ -389,6 +399,67 @@ def pro_respond_event(event_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+# ==================== Admin Routes ====================
+@app.route("/admin/dashboard")
+@admin_required
+def admin_dashboard():
+    # This is the new home page with the Calendar and Grid
+    return render_template("admin_dashboard.html", user_name=session.get("user_name"))
+
+@app.route("/admin/users")
+@admin_required
+def admin_users():
+    # We moved the User table here!
+    users_response = supabase.table("users").select("*").order("created_at", desc=True).execute()
+    return render_template(
+        "admin_users.html", 
+        users=users_response.data,
+        user_name=session.get("user_name")
+    )
+
+    try:
+        # 1. Create the user in Supabase Authentication Vault using God Mode key
+        auth_response = service_supabase.auth.admin.create_user({
+            "email": email,
+            "password": password,
+            "email_confirm": True
+        })
+        new_user_id = auth_response.user.id
+
+        # 2. Add their profile to our public users table
+        supabase.table("users").insert({
+            "id": new_user_id,
+            "email": email,
+            "user_name": user_name,
+            "role": role,
+            "is_active": True
+        }).execute()
+
+        # 3. Auto-link HOD to their Department!
+        if role.startswith("hod_"):
+            department_mapping = {
+                "hod_cse": "Computer Science (CSE)",
+                "hod_eee": "Electrical & Electronics (EEE)",
+                "hod_ce":  "Civil Engineering (CE)",
+                "hod_me":  "Mechanical Engineering (ME)",
+                "hod_ece": "Electronics & Communication (ECE)",
+                "hod_ra":  "Robotics & Automation (RA)"
+            }
+            target_dept_name = department_mapping.get(role)
+            if target_dept_name:
+                supabase.table("department").update({
+                    "hod_name": role,
+                    "hod_id": new_user_id
+                }).eq("name", target_dept_name).execute()
+
+        flash(f"User {user_name} created successfully!", "success")
+        
+    except Exception as e:
+        print("Error creating user:", e)
+        flash(f"Failed to create user. They might already exist.", "error")
+        
+    return redirect(url_for("admin_dashboard"))
 
 
 # ==================== Creation Routes ====================
