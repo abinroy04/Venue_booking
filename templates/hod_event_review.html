@@ -1,0 +1,286 @@
+{% extends "hod_base.html" %}
+
+{% block title %}
+Review Event
+{% endblock %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto px-4 py-8">
+
+```
+<!-- Header -->
+
+<div class="mb-8">
+
+    <a href="{{ url_for('hod_dashboard') }}"
+       class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+
+        ← Back to Dashboard
+
+    </a>
+
+    <h1 class="text-3xl font-bold text-slate-900 mt-3">
+        Event Review
+    </h1>
+
+    <p class="text-slate-500 mt-2">
+        Review booking request details before approval.
+    </p>
+
+</div>
+
+<!-- Event Information -->
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+
+    <h2 class="text-xl font-bold text-slate-900 mb-5">
+        {{ event.title }}
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-5">
+
+        <div>
+            <p class="text-sm text-slate-500">
+                Faculty Coordinator
+            </p>
+
+            <p class="font-semibold text-slate-800">
+                {{ event.faculty_name }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-slate-500">
+                Contact Number
+            </p>
+
+            <p class="font-semibold text-slate-800">
+                {{ event.phone }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-slate-500">
+                Venue
+            </p>
+
+            <p class="font-semibold text-slate-800">
+                {{ venue.name }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-slate-500">
+                Status
+            </p>
+
+            <span class="inline-flex px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                {{ event.status }}
+            </span>
+        </div>
+
+        <div>
+            <p class="text-sm text-slate-500">
+                Start Time
+            </p>
+
+            <p class="font-semibold text-slate-800">
+                {{ event.start_time }}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-slate-500">
+                End Time
+            </p>
+
+            <p class="font-semibold text-slate-800">
+                {{ event.end_time }}
+            </p>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Permission Letter -->
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+
+    <h3 class="text-lg font-bold text-slate-900 mb-4">
+        Permission Letter
+    </h3>
+
+    {% if event.permission_file_url %}
+
+    <a href="{{ event.permission_file_url }}"
+       target="_blank"
+       class="inline-flex items-center px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold">
+
+        View Uploaded Letter
+
+    </a>
+
+    {% else %}
+
+    <p class="text-slate-500">
+        No permission document uploaded.
+    </p>
+
+    {% endif %}
+
+</div>
+
+<!-- Facilities -->
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+
+    <h3 class="text-lg font-bold text-slate-900 mb-4">
+        Requested Facilities
+    </h3>
+
+    {% if facilities %}
+
+        <div class="space-y-3">
+
+            {% for facility in facilities %}
+
+            <div class="flex justify-between border rounded-lg p-3">
+
+                <span class="font-medium text-slate-700">
+
+                    {{ facility.facility_name }}
+
+                </span>
+
+                <span class="font-bold text-blue-600">
+
+                    {{ facility.requested_quantity }}
+
+                </span>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <p class="text-slate-500">
+            No facilities requested.
+        </p>
+
+    {% endif %}
+
+</div>
+
+<!-- Venue Conflict Warning -->
+
+{% if conflicts %}
+
+<div class="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+
+    <h3 class="text-red-700 font-bold mb-3">
+        Venue Conflict Warning
+    </h3>
+
+    {% for conflict in conflicts %}
+
+    <div class="mb-2">
+
+        {{ conflict.title }}
+
+        ({{ conflict.start_time }})
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<!-- Facility Warning -->
+
+{% if facility_warnings %}
+
+<div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
+
+    <h3 class="text-yellow-700 font-bold mb-3">
+        Facility Availability Warning
+    </h3>
+
+    {% for item in facility_warnings %}
+
+    <div class="mb-2">
+
+        {{ item.facility_name }}
+
+        |
+
+        Requested:
+        {{ item.requested }}
+
+        |
+
+        Available:
+        {{ item.available }}
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<!-- Approval Section -->
+
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+
+    <h3 class="text-lg font-bold text-slate-900 mb-4">
+        HOD Decision
+    </h3>
+
+    <form method="POST">
+
+        <textarea
+            id="remark"
+            name="remark"
+            rows="5"
+            placeholder="Enter remarks, recommendations or rejection reason..."
+            class="w-full border border-slate-300 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </textarea>
+
+        <div class="flex flex-col sm:flex-row gap-3 mt-5">
+
+            <button
+                type="submit"
+                formaction="{{ url_for('approve_event', event_id=event.id) }}"
+                class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold">
+
+                Approve Request
+
+            </button>
+
+            <button
+                type="submit"
+                formaction="{{ url_for('reject_event', event_id=event.id) }}"
+                class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-semibold">
+
+                Reject Request
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+```
+
+</div>
+
+{% endblock %}

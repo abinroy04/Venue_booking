@@ -250,35 +250,51 @@ def hod_dashboard():
         user_email=session["email"]
     )
     
+@app.route("/hod/event/<event_id>")
+@login_required
+def review_event(event_id):
+
+    event_response = (
+        supabase.table("Events")
+        .select("*")
+        .eq("id", event_id)
+        .single()
+        .execute()
+    )
+
+    event = event_response.data
+
+    return render_template(
+        "hod_event_review.html",
+        event=event
+    )
+    
 @app.route("/approve-event/<event_id>", methods=["POST"])
 @login_required
 def approve_event(event_id):
-    (
-        supabase.table("Events")
-        .update({
-            "status": "Approved",
-            "approved_by": session["user"]
-        })
-        .eq("id", event_id)
-        .execute()
-    )
+
+    remark = request.form.get("remark")
+
+    supabase.table("Events").update({
+        "status": "Approved",
+        "approved_by": session["user"],
+        "remarks": remark
+    }).eq("id", event_id).execute()
+
     return redirect(url_for("hod_dashboard"))
 
 @app.route("/reject-event/<event_id>", methods=["POST"])
 @login_required
 def reject_event(event_id):
+
     remark = request.form.get("remark")
-    
-    (
-        supabase.table("Events")
-        .update({
-            "status": "Rejected",
-            "approved_by": session["user"],
-            "rejection_reason": remark
-        })
-        .eq("id", event_id)
-        .execute()
-    )
+
+    supabase.table("Events").update({
+        "status": "Rejected",
+        "approved_by": session["user"],
+        "rejection_reason": remark
+    }).eq("id", event_id).execute()
+
     return redirect(url_for("hod_dashboard"))
 
 
@@ -416,6 +432,7 @@ def pro_respond_event(event_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+
 # ==================== Admin Routes ====================
 @app.route("/admin/dashboard")
 @admin_required
