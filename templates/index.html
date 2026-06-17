@@ -1,52 +1,387 @@
-{% extends "base.html" %}
+{% extends "user_base.html" %}
 
-{% block title %}Venue Booking System{% endblock %}
-
-{% block subtitle %}View all confirmed venue bookings{% endblock %}
+{% block title %}Saintgits Venue Booking System{% endblock %}
 
 {% block extra_css %}
+<!-- FullCalendar CSS -->
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
-{% endblock %}
-{% block content %}
-<div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-bold mb-4">Venue Bookings Calendar</h2>
-    <div id="calendar" class="bg-white p-4 rounded-lg shadow"></div>
-</div>
+<style>
+    /* FullCalendar Custom Premium Styles */
+    .fc {
+        font-family: 'Inter', sans-serif;
+        --fc-border-color: #f1f5f9;
+        --fc-button-bg-color: #2563eb;
+        --fc-button-border-color: #2563eb;
+        --fc-button-hover-bg-color: #1d4ed8;
+        --fc-button-hover-border-color: #1d4ed8;
+        --fc-button-active-bg-color: #1e40af;
+        --fc-button-active-border-color: #1e40af;
+        --fc-today-bg-color: #eff6ff;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+    @media (min-width: 768px) {
+        .fc .fc-toolbar-title {
+            font-size: 1.75rem;
+        }
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #475569;
+        font-weight: 600;
+        font-size: 0.875rem;
+        padding: 8px 0;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 6px 8px;
+    }
+    .fc .fc-event {
+        border-radius: 6px;
+        padding: 2px 6px;
+        font-weight: 500;
+        font-size: 0.75rem;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+    .fc .fc-event:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .fc .fc-button {
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: capitalize;
+        padding: 6px 12px;
+    }
+    .fc .fc-button-primary:disabled {
+        background-color: #94a3b8;
+        border-color: #94a3b8;
+        opacity: 0.7;
+    }
+</style>
 {% endblock %}
 
+{% block content %}
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-b from-blue-50/70 via-transparent to-transparent py-12 md:py-20 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-3xl mx-auto space-y-6">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold text-blue-600 uppercase tracking-wider">
+                College Management Portal
+            </span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-none">
+                Simplifying Campus <span class="text-blue-600 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Venue Scheduling</span>
+            </h1>
+            <p class="text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto">
+                Check venue availability in real-time, explore academic facilities, and submit booking requests digitally with hassle-free approval pathways.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 pt-2">
+                {% if session.get('user') %}
+                <a href="/event" class="px-6 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 hover:scale-[1.02]">
+                    Book a Venue
+                </a>
+                <a href="#calendar-section" class="px-6 py-3.5 bg-white text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
+                    View Calendar
+                </a>
+                {% else %}
+                <a href="/login" class="px-6 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 hover:scale-[1.02]">
+                    Sign In to Book
+                </a>
+                <a href="#calendar-section" class="px-6 py-3.5 bg-white text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all border border-slate-200 shadow-sm">
+                    View Availability
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics / Information Cards Section -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Stat Card 1 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">12+ Campus Venues</h3>
+                <p class="text-sm text-slate-400 mt-1">From high-tech labs and seminar halls to the main college auditorium.</p>
+            </div>
+        </div>
+        <!-- Stat Card 2 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Real-Time Calendars</h3>
+                <p class="text-sm text-slate-400 mt-1">Schedules update instantly upon PRO confirmation to prevent resource conflicts.</p>
+            </div>
+        </div>
+        <!-- Stat Card 3 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Digital Verification</h3>
+                <p class="text-sm text-slate-400 mt-1">Secure uploads of permission letters verify and streamline approval tracks.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Calendar Section -->
+<section id="calendar-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
+        <!-- Section Header + Venue Filter -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-950">Venue Availability Calendar</h2>
+                <p class="text-sm text-slate-400 mt-1">Select a venue below to filter bookings and find open slots.</p>
+            </div>
+            <!-- Venue Selector Dropdown -->
+            <div class="w-full md:w-72 shrink-0">
+                <label for="venue-filter" class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filter By Venue</label>
+                <select id="venue-filter" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all cursor-pointer">
+                    <option value="">All Venues</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- FullCalendar Container -->
+        <div id="calendar" class="p-2 md:p-4 bg-white rounded-2xl border border-slate-100 shadow-inner"></div>
+    </div>
+</section>
+
+<!-- Upcoming Events Poster Wall -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-slate-100">
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-950">Upcoming Events Poster Wall</h2>
+        <p class="text-sm text-slate-400 mt-1">Explore upcoming presentations, hackathons, and activities scheduled on campus.</p>
+    </div>
+    
+    <!-- Dynamic Cards Grid -->
+    <div id="upcoming-events-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Loaded via JavaScript -->
+        <div id="poster-wall-loading" class="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 gap-3">
+            <svg class="animate-spin w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm font-medium">Fetching upcoming schedule...</span>
+        </div>
+        <div id="poster-wall-empty" class="col-span-full py-12 text-center text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-2xl bg-white hidden">
+            No upcoming events scheduled at this time.
+        </div>
+    </div>
+</section>
+{% endblock %}
 
 {% block extra_js %}
+<!-- FullCalendar JavaScript Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const venueFilterSelect = document.getElementById('venue-filter');
+        const upcomingGrid = document.getElementById('upcoming-events-grid');
+        const loadingIndicator = document.getElementById('poster-wall-loading');
+        const emptyIndicator = document.getElementById('poster-wall-empty');
+        
+        let allEvents = [];
+
+        // 1. Fetch and Populate the Venue Selector Dropdown
+        async function populateVenueSelector() {
+            try {
+                const response = await fetch('/api/venues');
+                if (!response.ok) throw new Error('Failed to fetch venues');
+                const venues = await response.json();
+                
+                venues.forEach(venue => {
+                    const option = document.createElement('option');
+                    option.value = venue.id;
+                    option.textContent = venue.name;
+                    venueFilterSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading venue filter options:", error);
+            }
+        }
+
+        // 2. Initialize FullCalendar
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',  // Shows current month by default
-            events: [
-                // Add your events here, e.g.:
-                {
-                    title: 'Sample Event 1',
-                    start: '2026-03-15T10:00:00',
-                    end: '2026-03-15T12:00:00'
-                },
-                {
-                    title: 'Sample Event 2',
-                    start: '2026-03-20T14:00:00',
-                    end: '2026-03-20T16:00:00'
-                }
-            ],
-            headerToolbar: {
-                left: 'prev,next today',  // Buttons for navigating to previous/next months and jumping to today
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'  // View options
-            },
-            navLinks: true,  // Allows clicking on dates to navigate to day view
-            selectable: false,
+            initialView: 'dayGridMonth',
             nowIndicator: true,
+            navLinks: true,
+            selectable: false,
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-            height: 'auto'
+            height: 'auto',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            
+            // Custom events fetch and cache logic
+            events: function(info, successCallback, failureCallback) {
+                if (allEvents.length === 0) {
+                    fetch('/api/calendar-events')
+                        .then(response => {
+                            if (!response.ok) throw new Error('Failed to fetch events');
+                            return response.json();
+                        })
+                        .then(data => {
+                            allEvents = data;
+                            renderUpcomingEventsWall(allEvents);
+                            successCallback(filterCalendarEvents(allEvents));
+                        })
+                        .catch(err => {
+                            console.error("Error rendering calendar events:", err);
+                            failureCallback(err);
+                        });
+                } else {
+                    successCallback(filterCalendarEvents(allEvents));
+                }
+            }
         });
+        
         calendar.render();
+        populateVenueSelector();
+
+        // 3. Filter Calendar Events Client-Side
+        function filterCalendarEvents(events) {
+            const selectedVenueId = venueFilterSelect.value;
+            const selectedVenueName = venueFilterSelect.options[venueFilterSelect.selectedIndex]?.text;
+
+            if (!selectedVenueId) {
+                return events;
+            }
+
+            // Matches events with "(Venue Name)" suffix added by app.py
+            return events.filter(event => {
+                return event.title.includes(`(${selectedVenueName})`);
+            });
+        }
+
+        // Refetch calendar when dropdown choice changes
+        venueFilterSelect.addEventListener('change', function() {
+            calendar.refetchEvents();
+        });
+
+        // 4. Render Upcoming Event Poster Wall
+        function renderUpcomingEventsWall(events) {
+            // Remove loading indicator
+            if (loadingIndicator) loadingIndicator.remove();
+            
+            const now = new Date();
+            // Filter events that have not ended yet, sort by start time ascending
+            const upcoming = events
+                .filter(event => new Date(event.end) >= now)
+                .sort((a, b) => new Date(a.start) - new Date(b.start))
+                .slice(0, 8); // Grab up to 8 events
+
+            upcomingGrid.querySelectorAll('.event-poster-card').forEach(card => card.remove());
+
+            if (upcoming.length === 0) {
+                emptyIndicator.classList.remove('hidden');
+                return;
+            }
+
+            emptyIndicator.classList.add('hidden');
+
+            // List of beautiful gradient schemes for fake posters
+            const gradients = [
+                'from-blue-600 to-indigo-700',
+                'from-indigo-600 to-purple-700',
+                'from-blue-500 to-cyan-600',
+                'from-purple-600 to-pink-700',
+                'from-emerald-600 to-teal-700',
+                'from-violet-600 to-indigo-800'
+            ];
+
+            upcoming.forEach((event, index) => {
+                const start = new Date(event.start);
+                const end = new Date(event.end);
+                
+                // Format Month / Day
+                const formattedMonthDay = start.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+                
+                // Format Time Range
+                const startStr = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const endStr = end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const formattedTime = `${startStr} - ${endStr}`;
+                
+                // Parse Event Title and Venue from title ("Title (Venue Name)")
+                const lastIndex = event.title.lastIndexOf('(');
+                let eventTitle = event.title;
+                let venueName = 'Campus Venue';
+                if (lastIndex !== -1) {
+                    eventTitle = event.title.substring(0, lastIndex).trim();
+                    venueName = event.title.substring(lastIndex + 1, event.title.length - 1).trim();
+                }
+
+                // Choose a gradient
+                const gradientClasses = gradients[index % gradients.length];
+
+                // Create Card
+                const card = document.createElement('div');
+                card.className = "event-poster-card rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col h-full group";
+                
+                card.innerHTML = `
+                    <!-- Dynamic Poster Section -->
+                    <div class="h-44 bg-gradient-to-br ${gradientClasses} flex flex-col justify-between p-5 text-white relative overflow-hidden shrink-0">
+                        <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:16px_16px] opacity-30"></div>
+                        
+                        <div class="self-start px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider">
+                            ${formattedMonthDay}
+                        </div>
+                        
+                        <div class="relative z-10">
+                            <span class="text-[10px] font-bold text-white/75 uppercase tracking-widest block mb-1">Saintgits Event</span>
+                            <h4 class="text-base font-bold leading-snug line-clamp-2" title="${eventTitle}">${eventTitle}</h4>
+                        </div>
+                    </div>
+                    <!-- Details Section -->
+                    <div class="p-4 flex flex-col justify-between flex-grow">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2 text-slate-500 text-sm">
+                                <svg class="w-4.5 h-4.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span class="font-semibold text-slate-700 truncate" title="${venueName}">${venueName}</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-slate-500 text-sm">
+                                <svg class="w-4.5 h-4.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="font-medium">${formattedTime}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                upcomingGrid.appendChild(card);
+            });
+        }
     });
 </script>
 {% endblock %}

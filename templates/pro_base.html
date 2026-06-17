@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block mobile_links %}
+    <a href="/pro-dashboard" class="block px-4 py-3 rounded-lg text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-all">
+        PRO Dashboard
+    </a>
+{% endblock %}
+
+{% block desktop_links %}
+    <a href="/pro-dashboard" class="px-3.5 py-2 rounded-lg text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 transition-all">
+        PRO Queue
+    </a>
+{% endblock %}
+
+{% block content %}
+    {% block page_content %}{% endblock %}
+{% endblock %}

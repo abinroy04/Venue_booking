@@ -1,0 +1,363 @@
+{% extends "user_base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="max-w-7xl mx-auto px-6 py-8">
+
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">
+            Welcome, {{ user_name }}
+        </h1>
+        <p class="text-slate-500 mt-2">
+            Track your venue booking requests and approvals.
+        </p>
+    </div>
+
+    
+
+    <!-- Events Table -->
+
+    <div class="bg-white rounded-2xl shadow overflow-hidden">
+
+        <div class="p-6 border-b">
+            <h2 class="text-xl font-semibold">
+                My Event Requests
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full">
+
+                <thead class="bg-slate-50">
+
+                    <tr>
+                        <th class="text-left px-6 py-4">
+                            Event
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Venue
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Event Date
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Approval Status
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Facility Status
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Authority
+                        </th>
+
+                        <th class="text-left px-6 py-4">
+                            Actions
+                        </th>
+
+                </thead>
+
+                <tbody>
+
+                    {% for event in events %}
+
+                    <tr class="border-t">
+
+
+                        <td class="px-6 py-4">
+                            {{ event.title }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.venue_name }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.start_time[:10] }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {% if event.status == 'Approved' %}
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                                    Approved
+                                </span>
+                            {% elif event.status == 'Pending Approval' %}
+                                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                                    Pending
+                                </span>
+                            {% elif event.status == 'Cancelled' %}
+                                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                                    Cancelled
+                                </span>
+                            {% else %}
+                                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                                    Rejected
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {% if event.pro_status == 'Approved' %}
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                                    Approved
+                                </span>
+                            {% elif event.pro_status == 'Pending' %}
+                                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                                    Pending
+                                </span>
+                            {% else %}
+                                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
+                                    Rejected
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            {{ event.assigned_to }}
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <button
+                                onclick="openModal('{{ event.id }}')"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                                View
+                            </button>
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    <!-- Stats 
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Total Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-blue-600 mt-2">
+                {{ events|length }}
+            </p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Pending Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-amber-500 mt-2">
+                {{ events|selectattr('status','equalto','Pending Approval')|list|length }}
+            </p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow p-6">
+            <h3 class="text-slate-500 text-sm font-medium">
+                Approved Requests
+            </h3>
+
+            <p class="text-3xl font-bold text-green-600 mt-2">
+                {{ events|selectattr('status','equalto','Approved')|list|length }}
+            </p>
+        </div>
+
+    </div>
+
+</div> -->
+
+<!-- Event Detail Modals -->
+
+{% for event in events %}
+
+<div
+    id="modal-{{ event.id }}"
+    class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+>
+
+    <div class="bg-blue-100 rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+
+        <div class="flex justify-between items-center mb-6">
+
+            <h2 class="text-2xl font-bold">
+                {{ event.title }}
+            </h2>
+
+            <button
+                onclick="closeModal('{{ event.id }}')"
+                class="text-2xl"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <div class="space-y-6">
+
+            <div>
+
+                <h3 class="font-bold text-lg mb-2">
+                    Event Information
+                </h3>
+
+                <p><strong>Club:</strong> {{ event.club_name }}</p>
+
+                <p><strong>Venue:</strong> {{ event.venue_name }}</p>
+
+                <p><strong>Description:</strong> {{ event.description }}</p>
+
+            </div>
+
+            <div>
+
+                <h3 class="font-bold text-lg mb-2">
+                    Schedule
+                </h3>
+
+                <p><strong>Start:</strong> {{ event.start_time.replace('T', ' ')[:16] }}</p>
+
+                <p><strong>End:</strong> {{ event.end_time.replace('T', ' ')[:16] }}</p>
+
+            </div>
+
+            <div>
+
+                <h3 class="font-bold text-lg mb-2">
+                    Coordinator
+                </h3>
+
+                <p><strong>Faculty:</strong> {{ event.faculty_name }}</p>
+
+                <p><strong>Phone:</strong> {{ event.phone }}</p>
+
+            </div>
+
+            <div>
+
+                <h3 class="font-bold text-lg mb-2">
+                    Approval Details
+                </h3>
+
+                <p><strong>Status:</strong> {{ event.status }}</p>
+                {% if event.status == 'Cancelled' %}
+                <p class="text-red-600">
+                    <strong>Cancellation Reason:</strong>
+                    {{ event.cancellation_reason }}
+                </p>
+                {% endif %}
+
+                <p><strong>Approving Authority:</strong> {{ event.approved_by }}</p>
+
+                <p><strong>Facility Status:</strong> {{ event.pro_status }}</p>
+
+                {% if event.rejection_reason %}
+
+                <p class="text-red-600">
+                    <strong>Reason:</strong>
+                    {{ event.rejection_reason }}
+                </p>
+
+                {% endif %}
+
+            </div>
+
+            <div>
+
+                <h3 class="font-bold text-lg mb-2">
+                    Documents
+                </h3>
+
+                <a
+                    href="{{ event.permission_file_url }}"
+                    target="_blank"
+                    class="text-blue-600 underline hover:text-blue-800"
+                >
+                    View Approval Letter
+                </a>
+            </div>
+
+
+            {% if event.status != "Cancelled" and event.status != "Rejected" %}
+
+            <div class="mt-6">
+
+                <button
+                    type="button"
+                    onclick="toggleCancelForm('{{ event.id }}')"
+                    class="text-blue-600 underline hover:text-blue-800"
+                >
+                    Cancel Event
+                </button>
+
+            </div>
+
+            <div
+                id="cancel-form-{{ event.id }}"
+                class="hidden mt-4 p-4 border border-red-200 rounded-xl bg-red-50"
+            >
+
+                <form
+                    method="POST"
+                    action="{{ url_for('cancel_event', event_id=event.id) }}"
+                >
+
+                    <label class="block font-medium mb-2">
+                        Cancellation Reason
+                    </label>
+
+                    <textarea
+                        name="reason"
+                        rows="3"
+                        required
+                        class="w-full border rounded-lg p-3 mb-4"
+                    ></textarea>
+
+                    <button
+                        type="submit"
+                        class="bg-red-600 text-white px-4 py-2 rounded-lg"
+                    >
+                        Confirm Cancellation
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endfor %}
+
+<script>
+
+function openModal(id) {
+    document.getElementById("modal-" + id).classList.remove("hidden");
+}
+
+function closeModal(id) {
+    document.getElementById("modal-" + id).classList.add("hidden");
+}
+
+function toggleCancelForm(id) {
+
+    document.getElementById("cancel-form-" + id).classList.toggle("hidden");
+
+}
+
+</script>
+
+{% endblock %}
