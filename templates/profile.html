@@ -1,0 +1,93 @@
+{% extends base_template %}
+
+{% block page_content %}
+    <div class="p-8">
+        <h1>Welcome to your profile</h1>
+        </div>
+{% endblock %}
+
+{% block title %}My Profile - Venue Booking System{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-900">Profile Management</h1>
+        <p class="text-slate-500 mt-2">Manage your personal information and view your account status.</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mb-6 p-4 rounded-lg {% if category == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <form action="/profile" method="POST" class="p-6 md:p-8">
+            
+            <!-- Read-Only Account Info -->
+            <h3 class="text-lg font-semibold text-slate-900 mb-4 border-b border-slate-100 pb-2">Account Details</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 mb-1">Email Address</label>
+                    <input type="email" value="{{ user.email }}" disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 mb-1">Account Role</label>
+                    <input type="text" value="{{ user.role | capitalize }}" disabled class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 cursor-not-allowed capitalize">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-500 mb-1">Account Status</label>
+                    <div class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
+                        {% if user.is_active %}
+                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                            <span class="text-slate-700 font-medium">Active</span>
+                        {% else %}
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                            <span class="text-slate-700 font-medium">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editable Profile Info -->
+            <h3 class="text-lg font-semibold text-slate-900 mb-4 border-b border-slate-100 pb-2">Personal Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <label for="user_name" class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                    <input type="text" id="user_name" name="user_name" value="{{ user.user_name }}" required class="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                </div>
+                <div>
+                    <label for="phone_number" class="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                    <input type="tel" id="phone_number" name="phone_number" value="{{ user.phone_number or '' }}" placeholder="e.g. 9876543210" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                </div>
+                <!-- Inside your profile.html form -->
+                <div class="md:col-span-2">
+                    <label for="department_id" class="block text-sm font-medium text-slate-700 mb-1">Department</label>
+                            <!-- Changed name and id to department_id -->
+                            <select id="department_id" name="department_id" class="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all cursor-pointer">
+                                <option value="">Select your department...</option>
+                                    {% for dept in departments %}
+                                <!-- Checking against user.department_id -->
+                                    <option value="{{ dept.id }}" {% if user.department_id == dept.id %}selected{% endif %}>
+    {{ dept.name }}
+</option>
+                                    {% endfor %}
+                            </select>
+                        </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end gap-4 border-t border-slate-100 pt-6">
+                <a href="/dashboard" class="px-6 py-3 bg-white border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all">Cancel</a>
+                <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

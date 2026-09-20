@@ -1,0 +1,653 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Create Venue | Venue Booking Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom scrollbar for the facility tray and dropdown */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Mobile Responsiveness Overrides for Sliding Drawer Effect */
+    @media (max-width: 1024px) {
+        #main-container {
+            transform: none !important;
+            height: auto !important;
+            flex-direction: column !important;
+        }
+        #facility-tray {
+            position: fixed !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            border-radius: 0px !important;
+            transform: translateY(100%) !important;
+            opacity: 0 !important;
+            border: none !important;
+        }
+        #facility-tray.translate-x-0 {
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-12 overflow-x-hidden">
+    <!-- Header -->
+    <div class="mb-8 text-center md:text-left">
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Manage Venues</h1>
+        <p class="text-slate-500 mt-1">Configure campus locations, define seating capacities, and assign equipment facilities.</p>
+    </div>
+
+    <!-- Outer container to hide overflow on translate-x -->
+    <div class="w-full overflow-hidden py-4 px-1">
+        <div id="main-container"
+            class="relative w-full flex h-[680px] items-stretch transition-transform duration-500 ease-in-out translate-x-[16.66%]">
+
+            <!-- Venue Creation Card -->
+            <div class="w-full lg:w-2/3 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/40 p-6 md:p-10 z-20 relative flex flex-col">
+                <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </span>
+                    Create New Venue
+                </h2>
+
+                <form id="venue-form" class="flex flex-col flex-grow justify-between">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <label for="venue-name" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Venue Name</label>
+                            <input type="text" id="venue-name" required placeholder="e.g. Innovation Hall"
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all disabled:opacity-50 text-slate-800 placeholder-slate-400 font-medium text-sm">
+                        </div>
+                        <div>
+                            <label for="location" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Location</label>
+                            <select id="location" required
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer">
+                                <option value="" disabled selected>Select Location...</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc.id }}"
+                                    data-has-floors="{{ 'false' if loc.has_floors == False else 'true' }}"
+                                    data-has-rooms="{{ 'false' if loc.has_rooms == False else 'true' }}"
+                                    data-forced-name="{{ loc.forced_name or '' }}"
+                                    data-forced-type="{{ loc.forced_type or '' }}">
+                                    {{ loc.l_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="floor" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Floor</label>
+                            <select id="floor"
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer disabled:bg-slate-200/50 disabled:cursor-not-allowed">
+                                <option value="">N/A</option>
+                                <option value="Basement">Basement</option>
+                                <option value="Ground Floor">Ground Floor</option>
+                                <option value="1st Floor">1st Floor</option>
+                                <option value="2nd Floor">2nd Floor</option>
+                                <option value="3rd Floor">3rd Floor</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="room-number" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Room No.</label>
+                            <input type="text" id="room-number" placeholder="e.g. 101"
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all disabled:opacity-50 text-slate-800 placeholder-slate-400 font-medium text-sm">
+                        </div>
+
+                        <div>
+                            <label for="venue-type" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Venue Type</label>
+                            <select id="venue-type" required
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer disabled:bg-slate-200/50 disabled:cursor-not-allowed">
+                                <option value="" disabled selected>Select type...</option>
+                                {% for type in venue_types %}
+                                <option value="{{ type.id }}">{{ type.type_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="capacity" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Capacity</label>
+                            <input type="number" id="capacity" required min="1" placeholder="e.g. 60"
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 placeholder-slate-400 font-medium text-sm">
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2">
+                            <label for="description" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
+                            <textarea id="description" rows="3" required
+                                placeholder="Describe the venue's primary configuration and purpose..."
+                                class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 placeholder-slate-400 font-medium text-sm resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Footer Action Panel -->
+                    <div class="mt-8 pt-6 flex flex-wrap gap-4 items-center justify-between border-t border-slate-100">
+                        <div class="flex flex-col items-start">
+                            <button type="button" id="open-tray-btn"
+                                class="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 hover:bg-blue-100 font-semibold rounded-xl transition-all border border-blue-200 text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Add Facilities
+                            </button>
+                            <span id="main-facility-count" class="text-xs text-slate-400 mt-2 ml-1 font-semibold hidden">0 facilities added</span>
+                        </div>
+
+                        <div class="flex flex-col items-end w-full sm:w-auto min-w-[200px]">
+                            <button type="submit"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-md shadow-blue-500/10 transition-all text-sm active:scale-[0.98]">
+                                Review & Create
+                            </button>
+                            <p id="status-message" class="text-xs mt-2.5 font-bold hidden"></p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Facilities Sidebar Drawer -->
+            <div id="facility-tray"
+                class="absolute left-2/3 top-6 bottom-6 w-full lg:w-1/3 bg-slate-50 rounded-r-3xl border-y border-r border-slate-200 shadow-inner z-10 flex flex-col p-6 transition-all duration-500 ease-in-out transform -translate-x-full opacity-0 pointer-events-none">
+
+                <h3 class="text-base font-bold text-slate-900 border-b border-slate-200 pb-3 mb-4 flex items-center justify-between">
+                    Manage Facilities
+                    <span id="tray-unsaved-dot" class="flex h-2.5 w-2.5 relative hidden">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                    </span>
+                </h3>
+
+                <!-- Tag Display area -->
+                <div class="flex-grow bg-white border border-slate-200 rounded-2xl p-4 overflow-y-auto mb-4 relative flex flex-wrap gap-2 content-start shadow-inner">
+                    <span id="empty-tray-msg"
+                        class="absolute inset-0 flex items-center justify-center text-slate-400 font-semibold text-xs tracking-wider uppercase pointer-events-none">
+                        _ NO FACILITIES ADDED _
+                    </span>
+                    <div id="working-tags" class="flex flex-wrap gap-2 w-full relative z-10"></div>
+                </div>
+
+                <!-- Input group -->
+                <div class="flex gap-2 mb-4 relative z-20">
+                    <div class="relative flex-grow">
+                        <input type="text" id="facility-search" autocomplete="off" placeholder="Search facilities..."
+                            class="w-full p-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-medium transition-all text-slate-800 placeholder-slate-400">
+
+                        <ul id="facility-dropdown"
+                            class="absolute w-full mt-1.5 bg-white border border-slate-100 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden z-30 divide-y divide-slate-50">
+                        </ul>
+                    </div>
+                    <input type="number" id="facility-qty" value="1" min="1"
+                        class="w-16 p-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm font-bold text-center text-slate-800">
+                    <button type="button" id="add-to-tray-btn"
+                        class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 rounded-xl transition-all text-sm shadow-sm active:scale-[0.98]">
+                        Add
+                    </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex justify-end gap-3 mt-auto pt-4 border-t border-slate-200">
+                    <button type="button" id="close-tray-btn"
+                        class="px-5 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 hover:text-slate-800 font-semibold transition-all text-sm">
+                        Close
+                    </button>
+                    <button type="button" id="save-tray-btn"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold transition-all text-sm shadow-md shadow-blue-500/10">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 1: Unsaved warning -->
+<div id="warning-modal"
+    class="hidden fixed inset-0 bg-slate-900/60 z-[99999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-100 border border-slate-100">
+        <div class="p-6 text-center">
+            <div class="w-14 h-14 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-extrabold text-slate-900 mb-2">Unsaved Facilities</h3>
+            <p class="text-sm text-slate-500 leading-relaxed">You added facilities to the tray but haven't saved them. Do you want to save them before creating the venue?</p>
+        </div>
+        <div class="bg-slate-50 px-6 py-4 flex justify-between gap-3 border-t border-slate-100">
+            <button type="button" id="warn-discard-btn"
+                class="w-1/2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 font-semibold transition text-sm">
+                Discard
+            </button>
+            <button type="button" id="warn-save-btn"
+                class="w-1/2 px-4 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-semibold transition shadow-sm text-sm">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Final Details Confirmation Review -->
+<div id="confirmation-modal"
+    class="hidden fixed inset-0 bg-slate-900/60 z-[99999] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100">
+        <div class="bg-blue-600 px-8 py-6 text-white flex justify-between items-center">
+            <div>
+                <h3 class="text-lg font-bold">Review Venue Details</h3>
+                <p class="text-xs text-blue-100 mt-1">Verify all information before final submission.</p>
+            </div>
+            <svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+        <div class="p-6 md:p-8">
+            <div id="modal-details" class="space-y-3.5 text-sm text-slate-700"></div>
+        </div>
+        <div class="bg-slate-50 border-t border-slate-100 px-8 py-5 flex justify-end gap-3">
+            <button type="button" id="cancel-btn"
+                class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-100 font-semibold transition-all text-sm">
+                Edit Details
+            </button>
+            <button type="button" id="confirm-btn"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold transition-all text-sm shadow-md shadow-blue-500/10">
+                Confirm & Create
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const facilitiesData = {{ facilities | tojson | safe }};
+
+    let selectedFacilities = [];
+    let workingFacilities = [];
+    let isTrayUnsaved = false;
+
+    const locationSelect = document.getElementById('location');
+    const floorSelect = document.getElementById('floor');
+    const roomInput = document.getElementById('room-number');
+    const nameInput = document.getElementById('venue-name');
+    const typeSelect = document.getElementById('venue-type');
+    const capacityInput = document.getElementById('capacity');
+    const descInput = document.getElementById('description');
+    const venueForm = document.getElementById('venue-form');
+
+    const mainContainer = document.getElementById('main-container'); 
+    const tray = document.getElementById('facility-tray');
+    const openTrayBtn = document.getElementById('open-tray-btn');
+    const closeTrayBtn = document.getElementById('close-tray-btn');
+    const saveTrayBtn = document.getElementById('save-tray-btn');
+    const emptyMsg = document.getElementById('empty-tray-msg');
+    const workingTagsContainer = document.getElementById('working-tags');
+    const unsavedDot = document.getElementById('tray-unsaved-dot');
+    const mainCountLabel = document.getElementById('main-facility-count');
+
+    const searchInput = document.getElementById('facility-search');
+    const dropdownList = document.getElementById('facility-dropdown');
+    const qtyInput = document.getElementById('facility-qty');
+    const addToTrayBtn = document.getElementById('add-to-tray-btn');
+
+    const warningModal = document.getElementById('warning-modal');
+    const reviewModal = document.getElementById('confirmation-modal');
+    let pendingPayload = null;
+
+
+    locationSelect.addEventListener('change', (e) => {
+        const selectedOption = e.target.options[e.target.selectedIndex];
+
+        const hasFloors = selectedOption.dataset.hasFloors === 'true';
+        const hasRooms = selectedOption.dataset.hasRooms === 'true';
+        const forcedName = selectedOption.dataset.forcedName;
+        const forcedType = selectedOption.dataset.forcedType;
+
+        floorSelect.disabled = false;
+        roomInput.disabled = false;
+        nameInput.disabled = false;
+
+        if (typeSelect.disabled) {
+            typeSelect.disabled = false;
+            typeSelect.value = "";
+        }
+
+        if (nameInput.dataset.autoFilled === 'true') {
+            nameInput.value = '';
+            nameInput.dataset.autoFilled = 'false';
+        }
+        if (!hasFloors) {
+            floorSelect.disabled = true;
+            floorSelect.value = '';
+        }
+
+        if (!hasRooms) {
+            roomInput.disabled = true;
+            roomInput.value = '';
+        }
+
+        if (forcedName) {
+            nameInput.value = forcedName;
+            nameInput.disabled = true;
+            nameInput.dataset.autoFilled = 'true'; 
+        }
+
+        if (forcedType) {
+            for (let i = 0; i < typeSelect.options.length; i++) {
+                if (typeSelect.options[i].text === forcedType) {
+                    typeSelect.selectedIndex = i;
+                    break;
+                }
+            }
+            typeSelect.disabled = true;
+        }
+    });
+
+
+    function toggleTray(forceClose = false) {
+        const isOpen = tray.classList.contains('translate-x-0');
+
+        if (!isOpen && !forceClose) {
+            if (!isTrayUnsaved) {
+                workingFacilities = JSON.parse(JSON.stringify(selectedFacilities));
+            }
+            renderWorkingTags();
+
+            tray.classList.remove('-translate-x-full', 'opacity-0', 'pointer-events-none');
+            tray.classList.add('translate-x-0', 'opacity-100', 'pointer-events-auto');
+
+            mainContainer.classList.remove('translate-x-[16.66%]');
+            mainContainer.classList.add('translate-x-0');
+        } else {
+            tray.classList.add('-translate-x-full', 'opacity-0', 'pointer-events-none');
+            tray.classList.remove('translate-x-0', 'opacity-100', 'pointer-events-auto');
+
+            mainContainer.classList.remove('translate-x-0');
+            mainContainer.classList.add('translate-x-[16.66%]');
+
+            dropdownList.classList.add('hidden');
+            searchInput.value = '';
+        }
+    }
+
+    openTrayBtn.addEventListener('click', () => toggleTray());
+    closeTrayBtn.addEventListener('click', () => toggleTray(true));
+
+    saveTrayBtn.addEventListener('click', () => {
+        selectedFacilities = JSON.parse(JSON.stringify(workingFacilities));
+        isTrayUnsaved = false;
+        unsavedDot.classList.add('hidden');
+
+        if (selectedFacilities.length > 0) {
+            mainCountLabel.textContent = `${selectedFacilities.length} facility type(s) saved`;
+            mainCountLabel.classList.remove('hidden', 'text-amber-500');
+            mainCountLabel.classList.add('text-green-600');
+        } else {
+            mainCountLabel.classList.add('hidden');
+        }
+
+        toggleTray(true);
+    });
+
+
+    function renderDropdown(filterText = "") {
+        dropdownList.innerHTML = '';
+        const lowerFilter = filterText.toLowerCase();
+
+        const filtered = facilitiesData.filter(f => f.f_name.toLowerCase().includes(lowerFilter));
+
+        if (filtered.length === 0) {
+            dropdownList.innerHTML = `<li class="px-4 py-3 text-sm text-slate-500 italic">No facilities found.</li>`;
+        } else {
+            filtered.forEach(fac => {
+                const li = document.createElement('li');
+                li.className = "px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition-colors";
+                li.textContent = fac.f_name;
+                li.dataset.id = fac.id;
+                li.dataset.name = fac.f_name;
+
+                li.addEventListener('click', () => {
+                    searchInput.value = fac.f_name;
+                    searchInput.dataset.selectedId = fac.id;
+                    dropdownList.classList.add('hidden');
+                });
+
+                dropdownList.appendChild(li);
+            });
+        }
+    }
+
+    searchInput.addEventListener('focus', () => {
+        renderDropdown(searchInput.value);
+        dropdownList.classList.remove('hidden');
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        searchInput.removeAttribute('data-selected-id');
+        renderDropdown(e.target.value);
+        dropdownList.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+            dropdownList.classList.add('hidden');
+        }
+    });
+
+
+    addToTrayBtn.addEventListener('click', () => {
+        const name = searchInput.value.trim();
+        const facilityId = searchInput.dataset.selectedId;
+        const qty = parseInt(qtyInput.value);
+
+        if (!facilityId) {
+            alert("Please select a valid facility from the dropdown list.");
+            return;
+        }
+
+        if (name && qty > 0) {
+            const existingIndex = workingFacilities.findIndex(f => f.facility_id === facilityId);
+            if (existingIndex > -1) {
+                workingFacilities[existingIndex].quantity = qty;
+            } else {
+                workingFacilities.push({ facility_id: facilityId, name: name, quantity: qty });
+            }
+
+            isTrayUnsaved = true;
+            unsavedDot.classList.remove('hidden');
+            mainCountLabel.textContent = "Unsaved changes in tray...";
+            mainCountLabel.classList.remove('hidden', 'text-green-600');
+            mainCountLabel.classList.add('text-amber-500');
+
+            searchInput.value = '';
+            searchInput.removeAttribute('data-selected-id');
+            qtyInput.value = 1;
+            renderWorkingTags();
+        }
+    });
+
+    window.removeWorkingFacility = function (index) {
+        workingFacilities.splice(index, 1);
+        isTrayUnsaved = true;
+        unsavedDot.classList.remove('hidden');
+        renderWorkingTags();
+    }
+
+    function renderWorkingTags() {
+        workingTagsContainer.innerHTML = '';
+
+        if (workingFacilities.length === 0) {
+            emptyMsg.classList.remove('hidden');
+        } else {
+            emptyMsg.classList.add('hidden');
+            workingFacilities.forEach((facility, index) => {
+                const tag = document.createElement('span');
+                tag.className = "bg-blue-50 border border-blue-200 text-blue-800 text-xs font-semibold px-3 py-1.5 rounded-xl flex items-center shadow-sm h-fit";
+                tag.innerHTML = `
+                    ${facility.name} <span class="bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded ml-2">${facility.quantity}</span>
+                    <button type="button" onclick="removeWorkingFacility(${index})" class="text-blue-400 hover:text-red-500 ml-2 focus:outline-none transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                `;
+                workingTagsContainer.appendChild(tag);
+            });
+        }
+    }
+
+
+    function buildReviewModal() {
+        const typeText = typeSelect.options[typeSelect.selectedIndex].text;
+        const locText = locationSelect.options[locationSelect.selectedIndex].text;
+
+        pendingPayload = {
+            venue_name: nameInput.value,
+            venue_type: typeSelect.value,
+            location: locationSelect.value,
+            floor: floorSelect.value || null,
+            room_number: roomInput.value || null,
+            capacity: parseInt(capacityInput.value),
+            description: descInput.value,
+            facilities: selectedFacilities
+        };
+
+        let facilityText = "<span class='text-slate-400 italic'>No facilities added</span>";
+        if (selectedFacilities.length > 0) {
+            facilityText = selectedFacilities.map(f => `<span class="bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-1 rounded-xl text-xs mr-2 mb-2 inline-block font-semibold">${f.name} (${f.quantity})</span>`).join('');
+        }
+
+        document.getElementById('modal-details').innerHTML = `
+            <div class="grid grid-cols-5 gap-4 border-b border-slate-100 pb-3">
+                <span class="col-span-2 font-bold text-slate-500">Venue Name:</span> 
+                <span class="col-span-3 font-extrabold text-slate-900">${pendingPayload.venue_name}</span>
+            </div>
+            <div class="grid grid-cols-5 gap-4 border-b border-slate-100 pb-3">
+                <span class="col-span-2 font-bold text-slate-500">Location:</span> 
+                <span class="col-span-3 font-semibold text-slate-800">${locText}</span>
+            </div>
+            <div class="grid grid-cols-5 gap-4 border-b border-slate-100 pb-3">
+                <span class="col-span-2 font-bold text-slate-500">Floor & Room:</span> 
+                <span class="col-span-3 font-semibold text-slate-800">${pendingPayload.floor || 'N/A'} <span class="mx-2 text-slate-300">|</span> Room: ${pendingPayload.room_number || 'N/A'}</span>
+            </div>
+            <div class="grid grid-cols-5 gap-4 border-b border-slate-100 pb-3">
+                <span class="col-span-2 font-bold text-slate-500">Type & Capacity:</span> 
+                <span class="col-span-3 font-semibold text-slate-800">${typeText} <span class="mx-2 text-slate-300">|</span> ${pendingPayload.capacity} Pax Capacity</span>
+            </div>
+            <div class="flex flex-col gap-2 border-b border-slate-100 pb-3">
+                <span class="font-bold text-slate-500">Facilities Included:</span> 
+                <div class="flex flex-wrap mt-1.5">${facilityText}</div>
+            </div>
+            <div class="flex flex-col gap-2">
+                <span class="font-bold text-slate-500">Description:</span> 
+                <span class="text-slate-600 bg-slate-50 p-4 rounded-2xl italic border border-slate-200/60 leading-relaxed">"${pendingPayload.description}"</span>
+            </div>
+        `;
+
+        reviewModal.classList.remove('hidden');
+    }
+
+    venueForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        toggleTray(true);
+
+        if (isTrayUnsaved) {
+            warningModal.classList.remove('hidden');
+        } else {
+            buildReviewModal();
+        }
+    });
+
+    document.getElementById('warn-discard-btn').addEventListener('click', () => {
+        workingFacilities = JSON.parse(JSON.stringify(selectedFacilities));
+        isTrayUnsaved = false;
+        unsavedDot.classList.add('hidden');
+        warningModal.classList.add('hidden');
+        buildReviewModal();
+    });
+
+    document.getElementById('warn-save-btn').addEventListener('click', () => {
+        selectedFacilities = JSON.parse(JSON.stringify(workingFacilities));
+        isTrayUnsaved = false;
+        unsavedDot.classList.add('hidden');
+        warningModal.classList.add('hidden');
+        buildReviewModal();
+    });
+
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+        reviewModal.classList.add('hidden');
+        pendingPayload = null;
+    });
+
+    const statusMsg = document.getElementById('status-message');
+    const confirmBtn = document.getElementById('confirm-btn');
+
+    confirmBtn.addEventListener('click', async () => {
+        if (!pendingPayload) return;
+
+        const originalBtnText = confirmBtn.innerText;
+        confirmBtn.innerText = "Creating...";
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('opacity-70', 'cursor-not-allowed');
+
+        try {
+            const response = await fetch('/venues', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingPayload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                reviewModal.classList.add('hidden');
+                statusMsg.classList.remove('hidden', 'text-red-600');
+                statusMsg.classList.add('text-green-600');
+                statusMsg.textContent = "✅ Venue created successfully!";
+
+                venueForm.reset();
+                floorSelect.disabled = false;
+                roomInput.disabled = false;
+                nameInput.disabled = false;
+                selectedFacilities = [];
+                workingFacilities = [];
+                isTrayUnsaved = false;
+                mainCountLabel.classList.add('hidden');
+                unsavedDot.classList.add('hidden');
+                renderWorkingTags();
+
+                setTimeout(() => statusMsg.classList.add('hidden'), 5000);
+            } else {
+                throw new Error(data.error?.message || "Server rejected the data.");
+            }
+        } catch (error) {
+            reviewModal.classList.add('hidden');
+            statusMsg.classList.remove('hidden', 'text-green-600');
+            statusMsg.classList.add('text-red-600');
+            statusMsg.textContent = "❌ " + error.message;
+        } finally {
+            confirmBtn.innerText = originalBtnText;
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            pendingPayload = null;
+        }
+    });
+</script>
+{% endblock %}

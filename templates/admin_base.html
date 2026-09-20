@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block mobile_links %}
+    <a href="/admin/dashboard" class="block px-4 py-3 rounded-lg text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-all">
+        Admin Panel
+    </a>
+    <a href="/venue" class="block px-4 py-3 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all">
+        Manage Venues
+    </a>
+{% endblock %}
+
+{% block desktop_links %}
+    <a href="/admin/dashboard" class="px-3.5 py-2 rounded-lg text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-all">
+        Admin Panel
+    </a>
+    <a href="/venue" class="px-3.5 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-all">
+        Manage Venues
+    </a>
+{% endblock %}
+
+{% block content %}
+    {% block page_content %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,405 @@
+{% extends "admin_base.html" %}
+
+{% block title %}System Admin - Saintgits Venue Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-5">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">User Management</h1>
+            <p class="text-xs text-slate-500 mt-1">View, add, and manage system access for students and staff.</p>
+        </div>
+        
+        <button onclick="document.getElementById('add-user-modal').classList.remove('hidden')" class="px-3 py-1.5 text-xs bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-sm transition-all flex items-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Pre-Provision User
+        </button>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-100 text-[10px] uppercase text-slate-500 tracking-wider font-bold">
+                        <th class="px-3 py-2.5">Name</th>
+                        <th class="px-3 py-2.5">Email</th>
+                        <th class="px-3 py-2.5">System Role</th>
+                        <th class="px-3 py-2.5">Status</th>
+                        <th class="px-3 py-2.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs divide-y divide-slate-100">
+                    {% for user in users %}
+                    <tr class="hover:bg-slate-50 transition-colors" id="user-row-{{ user.id }}">
+                        <td class="px-3 py-2 font-semibold text-slate-900">{{ user.user_name }}</td>
+                        <td class="px-3 py-2 text-slate-600">{{ user.email }}</td>
+                        <td class="px-3 py-2">
+                            {% if user.role == 'admin' %}
+                                <span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[9px] font-bold uppercase tracking-wider">Admin</span>
+                            {% elif user.role == 'pro' %}
+                                <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold uppercase tracking-wider">PRO</span>
+                            {% elif user.role.startswith('hod') %}
+                                <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[9px] font-bold uppercase tracking-wider">HOD</span>
+                            {% else %}
+                                <span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-bold uppercase tracking-wider">Student</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2">
+                            {% if user.is_active %}
+                                <div class="flex items-center gap-1.5 text-emerald-600 text-[11px] font-bold">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Active
+                                </div>
+                            {% else %}
+                                <div class="flex items-center gap-1.5 text-rose-600 text-[11px] font-bold">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Suspended
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <button onclick="openEditModal('{{ user.id }}', '{{ user.user_name }}', '{{ user.email }}', '{{ user.phone_number or '' }}', '{{ user.role }}', '{{ user.department_id or '' }}')" class="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div id="add-user-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-all">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+        
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+            <div>
+                <h3 class="text-base font-bold text-slate-900">Pre-Provision Account</h3>
+            </div>
+            <button onclick="document.getElementById('add-user-modal').classList.add('hidden')" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="overflow-y-auto p-5">
+            <form id="add-user-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                        <input type="text" id="user_name" name="user_name" required placeholder="e.g. John Doe" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="name@saintgits.org" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Contact Number</label>
+                        <input type="tel" id="contact_number" name="contact_number" required placeholder="+91 XXXXX XXXXX" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">System Role</label>
+                        <select id="role-select" name="role" required class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-all cursor-pointer">
+                            <option value="student">Student</option>
+                            <option value="hod">HOD</option>
+                            <option value="pro">PRO</option>
+                            <option value="admin">System Admin</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+                        <select id="dept-select" name="department" required class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-all disabled:opacity-50 disabled:bg-slate-50 cursor-pointer">
+                            <option value="" disabled selected>Select Department</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 pt-1">
+                        <div class="border-t border-slate-100 pt-4">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Temporary Password</label>
+                            <input type="password" id="password" name="password" required minlength="6" placeholder="Minimum 6 characters" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('add-user-modal').classList.add('hidden')" class="px-4 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" id="submit-btn" class="px-4 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="edit-user-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 transition-all">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+            <div>
+                <h3 class="text-base font-bold text-slate-900">Edit User Profile</h3>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="confirmDelete()" class="px-3 py-1.5 text-[11px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Delete User
+                </button>
+                <button onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-y-auto p-5">
+            <form id="edit-user-form">
+                <input type="hidden" id="edit_user_id" name="user_id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    <div class="md:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Full Name</label>
+                        <input type="text" id="edit_user_name" name="user_name" required class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
+                        <input type="email" id="edit_email" name="email" required class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Contact Number</label>
+                        <input type="tel" id="edit_contact_number" name="contact_number" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">System Role</label>
+                        <select id="edit_role-select" name="role" required class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-all">
+                            <option value="student">Student</option>
+                            <option value="hod">HOD</option>
+                            <option value="pro">PRO</option>
+                            <option value="admin">System Admin</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+                        <select id="edit_dept-select" name="department" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white transition-all disabled:opacity-50 disabled:bg-slate-50">
+                            <option value="" disabled selected>Select Department</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 pt-1">
+                        <div class="border-t border-slate-100 pt-4">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">New Password (Optional)</label>
+                            <input type="password" id="edit_password" name="password" placeholder="Leave blank to keep current password" class="w-full p-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="document.getElementById('edit-user-modal').classList.add('hidden')" class="px-4 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" id="edit-submit-btn" class="px-4 py-1.5 text-xs font-bold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="delete-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4 transition-all">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-5 text-center">
+        <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900 mb-1">Are you sure?</h3>
+        <p class="text-xs text-slate-500 mb-5">This action cannot be undone. This will permanently delete the user.</p>
+        <div class="flex gap-2">
+            <button onclick="document.getElementById('delete-confirm-modal').classList.add('hidden')" class="flex-1 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+            <button onclick="executeDelete()" id="execute-delete-btn" class="flex-1 py-2 text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 rounded-lg transition-colors">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+<div id="success-toast" class="fixed bottom-5 right-5 bg-emerald-500 text-white px-4 py-2.5 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-[110] flex items-center gap-2">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <span class="font-semibold text-xs" id="toast-message">Action successful!</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Function to open and populate Edit Modal
+function openEditModal(id, name, email, phone, role, deptId) {
+    document.getElementById('edit_user_id').value = id;
+    document.getElementById('edit_user_name').value = name;
+    document.getElementById('edit_email').value = email;
+    document.getElementById('edit_contact_number').value = phone;
+    document.getElementById('edit_role-select').value = role;
+    document.getElementById('edit_password').value = ""; // Always start blank
+    
+    const deptSelect = document.getElementById('edit_dept-select');
+    deptSelect.value = deptId || "";
+    
+    // Grey out logic for Edit form
+    if (role === 'pro' || role === 'admin') {
+        deptSelect.disabled = true;
+    } else {
+        deptSelect.disabled = false;
+    }
+
+    document.getElementById('edit-user-modal').classList.remove('hidden');
+}
+
+// Grey out logic listener for Edit form dropdown change
+document.getElementById('edit_role-select').addEventListener('change', function() {
+    const deptSelect = document.getElementById('edit_dept-select');
+    if (this.value === 'pro' || this.value === 'admin') {
+        deptSelect.disabled = true;
+        deptSelect.value = ""; 
+    } else {
+        deptSelect.disabled = false;
+    }
+});
+
+// Handle Edit Form Submission
+document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('edit-submit-btn');
+    btn.innerHTML = "Saving..."; btn.disabled = true;
+
+    const payload = {
+        user_id: document.getElementById('edit_user_id').value,
+        user_name: document.getElementById('edit_user_name').value,
+        email: document.getElementById('edit_email').value,
+        contact_number: document.getElementById('edit_contact_number').value,
+        role: document.getElementById('edit_role-select').value,
+        department: document.getElementById('edit_dept-select').value,
+        password: document.getElementById('edit_password').value // Will be empty if not changed
+    };
+
+    try {
+        const response = await fetch('/api/admin/users/edit', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            window.location.reload(); // Refresh to show updated data
+        } else {
+            const data = await response.json();
+            alert("Error: " + (data.error || "Failed to update"));
+            btn.innerHTML = "Save Changes"; btn.disabled = false;
+        }
+    } catch (err) {
+        alert("Network error.");
+        btn.innerHTML = "Save Changes"; btn.disabled = false;
+    }
+});
+
+// Handle Delete Logic
+function confirmDelete() {
+    document.getElementById('delete-confirm-modal').classList.remove('hidden');
+}
+
+async function executeDelete() {
+    const userId = document.getElementById('edit_user_id').value;
+    const btn = document.getElementById('execute-delete-btn');
+    btn.innerHTML = "Deleting..."; btn.disabled = true;
+
+    try {
+        const response = await fetch(`/api/admin/users/delete/${userId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            window.location.reload(); // Refresh to remove user from table
+        } else {
+            const data = await response.json();
+            alert("Error: " + (data.error || "Failed to delete user"));
+            btn.innerHTML = "Yes, Delete"; btn.disabled = false;
+        }
+    } catch (err) {
+        alert("Network error.");
+        btn.innerHTML = "Yes, Delete"; btn.disabled = false;
+    }
+}
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('role-select');
+        const deptSelect = document.getElementById('dept-select');
+        const form = document.getElementById('add-user-form');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Logic to grey out Department if PRO or Admin is selected
+        roleSelect.addEventListener('change', function() {
+            if (this.value === 'pro' || this.value === 'admin') {
+                // Disabled for PRO, Admin, and Students
+                deptSelect.disabled = true;
+                deptSelect.value = ""; 
+                deptSelect.removeAttribute('required'); 
+            } else {
+                // Enabled for HOD
+                deptSelect.disabled = false;
+                deptSelect.setAttribute('required', 'required');
+            }
+        });
+
+        // Trigger the change event on load to set initial state correctly
+        roleSelect.dispatchEvent(new Event('change'));
+
+        // Background AJAX form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+            
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating...`;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            const payload = {
+                user_name: document.getElementById('user_name').value,
+                email: document.getElementById('email').value,
+                contact_number: document.getElementById('contact_number').value,
+                role: document.getElementById('role-select').value,
+                department: document.getElementById('dept-select').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('/api/admin/users/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('add-user-modal').classList.add('hidden');
+                    form.reset();
+                    window.location.reload(); 
+                } else {
+                    alert("Error: " + (data.error || "Failed to create user."));
+                    resetButton();
+                }
+            } catch (error) {
+                console.error("Error submitting form:", error);
+                alert("Network error. Please check your connection and try again.");
+                resetButton();
+            }
+
+            function resetButton() {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        });
+    });
+</script>
+{% endblock %}
