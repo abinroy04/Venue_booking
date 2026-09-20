@@ -78,7 +78,7 @@
                         </td>
 
                         <td class="px-6 py-4">
-                            {{ event.start_time[:10] }}
+                            {{ event.start_time|format_datetime }}
                         </td>
 
                         <td class="px-6 py-4">
@@ -226,9 +226,9 @@
                     Schedule
                 </h3>
 
-                <p><strong>Start:</strong> {{ event.start_time.replace('T', ' ')[:16] }}</p>
+                <p><strong>Start:</strong> {{ event.start_time|format_datetime }}</p>
 
-                <p><strong>End:</strong> {{ event.end_time.replace('T', ' ')[:16] }}</p>
+                <p><strong>End:</strong> {{ event.end_time|format_datetime }}</p>
 
             </div>
 

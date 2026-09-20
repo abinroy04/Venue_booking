@@ -290,13 +290,13 @@
                 </thead>
                 <tbody>
                     {% for event in events %}
-                    <tr class="border-t border-slate-100 pro-table-row" data-pro-status="{{ event.pro_status }}" data-date="{{ event.start_time[:10] }}">
+                    <tr class="border-t border-slate-100 pro-table-row" data-pro-status="{{ event.pro_status }}" data-date="{{ event.start_time|format_date('%Y-%m-%d') }}">
                         <td class="px-5 py-4">
                             <div class="font-semibold text-slate-800 text-sm">{{ event.title }}</div>
                             <div class="text-xs text-slate-400 mt-0.5">{{ event.club_name }}</div>
                         </td>
                         <td class="px-5 py-4 text-sm text-slate-600 font-medium">{{ event.venue_name }}</td>
-                        <td class="px-5 py-4 text-sm text-slate-600">{{ event.start_time[:10] }}</td>
+                        <td class="px-5 py-4 text-sm text-slate-600">{{ event.start_time|format_datetime }}</td>
                         <td class="px-5 py-4">
                             {% if event.status == 'Approved' %}
                                 <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-emerald-200">
@@ -427,19 +427,27 @@ document.addEventListener('DOMContentLoaded', function() {
             right: 'dayGridMonth,timeGridWeek'
         },
         events: function(info, successCallback, failureCallback) {
-            if (allCalendarEvents.length === 0) {
-                fetch('/api/pro-calendar-events')
-                    .then(r => { if (!r.ok) throw new Error('Fetch failed'); return r.json(); })
-                    .then(data => {
-                        allCalendarEvents = data;
-                        successCallback(processForBackground(filterByVenue(data)));
-                    })
-                    .catch(err => {
-                        console.error('Calendar events error:', err);
-                        failureCallback(err);
-                    });
-            } else {
-                successCallback(processForBackground(filterByVenue(allCalendarEvents)));
+            const fetchPromise = allCalendarEvents.length === 0
+                ? fetch('/api/pro-calendar-events').then(r => { if (!r.ok) throw new Error('Fetch failed'); return r.json(); })
+                : Promise.resolve(allCalendarEvents);
+
+            fetchPromise
+                .then(data => {
+                    allCalendarEvents = data;
+                    const filtered = filterByVenue(data);
+                    const bgEvents = processForBackground(filtered);
+                    successCallback([...bgEvents, ...filtered]);
+                })
+                .catch(err => {
+                    console.error('Calendar events error:', err);
+                    failureCallback(err);
+                });
+        },
+        eventClick: function(info) {
+            if (info.event.display === 'background') return;
+            info.jsEvent.preventDefault();
+            if (info.event.id) {
+                openProPanel(info.event.id);
             }
         },
         dateClick: function(info) {
@@ -454,13 +462,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function processForBackground(events) {
         const eventsByDate = {};
         events.forEach(e => {
-            const dateStr = e.start.split('T')[0];
+            const dateStr = e.start ? e.start.split('T')[0] : '';
+            if (!dateStr) return;
             if (!eventsByDate[dateStr]) {
                 eventsByDate[dateStr] = { pending: 0, approved: 0, rejected: 0 };
             }
-            if (e.extendedProps.pro_status === 'Pending') eventsByDate[dateStr].pending++;
-            else if (e.extendedProps.pro_status === 'Approved') eventsByDate[dateStr].approved++;
-            else if (e.extendedProps.pro_status === 'Rejected') eventsByDate[dateStr].rejected++;
+            if (e.extendedProps && e.extendedProps.pro_status === 'Pending') eventsByDate[dateStr].pending++;
+            else if (e.extendedProps && e.extendedProps.pro_status === 'Approved') eventsByDate[dateStr].approved++;
+            else if (e.extendedProps && e.extendedProps.pro_status === 'Rejected') eventsByDate[dateStr].rejected++;
         });
 
         const bgEvents = [];
@@ -591,8 +600,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function renderPanelContent(evt) {
-        const startFormatted = evt.start_time ? evt.start_time.replace('T', '  ').slice(0, 17) : 'N/A';
-        const endFormatted = evt.end_time ? evt.end_time.replace('T', '  ').slice(0, 17) : 'N/A';
+        const startFormatted = evt.start_time ? String(evt.start_time).replace('T', ' ').slice(0, 16) : 'N/A';
+        const endFormatted = evt.end_time ? String(evt.end_time).replace('T', ' ').slice(0, 16) : 'N/A';
 
         // Status badge helper
         function statusBadge(status, type) {
@@ -682,11 +691,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="grid grid-cols-2 gap-3 text-sm">
                     <div>
                         <span class="text-slate-400 text-xs font-semibold">Name</span>
-                        <p class="text-slate-700 font-medium mt-0.5">${evt.faculty_name || 'N/A'}</p>
+                        <p class="text-slate-700 font-medium mt-0.5">${evt.faculty_coordinator || evt.faculty_name || 'N/A'}</p>
                     </div>
                     <div>
                         <span class="text-slate-400 text-xs font-semibold">Phone</span>
-                        <p class="text-slate-700 font-medium mt-0.5">${evt.phone || 'N/A'}</p>
+                        <p class="text-slate-700 font-medium mt-0.5">${evt.contact_number || evt.phone || 'N/A'}</p>
                     </div>
                 </div>
             </div>

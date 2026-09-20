@@ -1,40 +1,33 @@
-{% extends "user_base.html" %}
+{% extends base_template %}
 
-{% block title %}Book Venue | Venue Booking Portal{% endblock %}
+{% block title %}Book a Venue | Venue Booking System{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Prevent default system datetime-local input style differences */
-    input[type="datetime-local"] {
-        color: #334155;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-    <!-- Breadcrumb/Header -->
-    <div class="mb-8 text-center md:text-left">
-        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Book Venue</h1>
-        <p class="text-slate-500 mt-1">Submit a new event reservation request. Fill out all sections below.</p>
+{% block page_content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+    
+    <!-- Header Title -->
+    <div class="mb-8 text-center sm:text-left">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Digital Event & Venue Booking Form</h1>
+        <p class="text-sm sm:text-base text-slate-500 mt-2">Fill out the required event details, schedule, facilities, and upload your offline permission letter.</p>
     </div>
 
-    <!-- Form Container -->
-    <div class="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-100/40 overflow-hidden">
-        <form id="eventForm" class="p-6 md:p-10 space-y-10">
+    <!-- Main Card -->
+    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-5 sm:p-8 md:p-10">
+        
+        <form id="eventForm" enctype="multipart/form-data" class="space-y-8">
             
-            <!-- Section 1: Event Details -->
+            <!-- Section 1: Basic Event Details -->
             <div class="space-y-6">
                 <div class="border-b border-slate-100 pb-3 flex items-center gap-2">
                     <div class="w-6.5 h-6.5 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h2 class="text-lg font-bold text-slate-900">Event Details</h2>
+                    <h2 class="text-lg font-bold text-slate-900">Event Overview</h2>
                 </div>
 
-                <div class="space-y-4">
+                <div class="space-y-5">
                     <div>
                         <label for="title" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Event Title</label>
                         <input type="text" id="title" name="title" placeholder="e.g. Annual College Hackathon" required
@@ -43,7 +36,7 @@
 
                     <div>
                         <label for="description" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Description</label>
-                        <textarea id="description" name="description" placeholder="Describe the purpose, agenda, and target audience..." rows="4" required
+                        <textarea id="description" name="description" placeholder="Describe the purpose, agenda, and target audience..." rows="3" required
                             class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 placeholder-slate-400 font-medium text-sm resize-none"></textarea>
                     </div>
 
@@ -53,6 +46,13 @@
                             class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer">
                             <option value="" disabled selected>Select Event Type...</option>
                         </select>
+
+                        <!-- Custom Event Type Input (Appears when 'Other' selected) -->
+                        <div id="custom_event_type_div" class="hidden mt-3">
+                            <label for="custom_event_type" class="block text-xs font-bold text-blue-600 uppercase tracking-wider mb-1.5">Specify Custom Event Type</label>
+                            <input type="text" id="custom_event_type" name="custom_event_type" placeholder="e.g. Robotics Exhibition, Flashmob, Debate..."
+                                class="w-full p-3.5 bg-blue-50/50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -109,11 +109,18 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label for="club" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Organizing Club</label>
+                        <label for="club" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Organizing Club / Association</label>
                         <select id="club" name="club_id" required
                             class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer">
                             <option value="" disabled selected>Select Club...</option>
                         </select>
+
+                        <!-- Custom Club Input -->
+                        <div id="custom_club_div" class="hidden mt-3">
+                            <label for="custom_club_name" class="block text-xs font-bold text-blue-600 uppercase tracking-wider mb-1.5">Specify Custom Club / Association</label>
+                            <input type="text" id="custom_club_name" name="custom_club_name" placeholder="e.g. IEEE Student Branch, Fine Arts Club..."
+                                class="w-full p-3.5 bg-blue-50/50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm">
+                        </div>
                     </div>
 
                     <div>
@@ -122,6 +129,13 @@
                             class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer">
                             <option value="" disabled selected>Select Venue...</option>
                         </select>
+
+                        <!-- Custom Venue Input -->
+                        <div id="custom_venue_div" class="hidden mt-3">
+                            <label for="custom_venue_name" class="block text-xs font-bold text-blue-600 uppercase tracking-wider mb-1.5">Specify Custom Venue / Location</label>
+                            <input type="text" id="custom_venue_name" name="custom_venue_name" placeholder="e.g. Open Air Stage, Central Courtyard..."
+                                class="w-full p-3.5 bg-blue-50/50 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all text-slate-800 font-medium text-sm">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -137,26 +151,26 @@
                     <h2 class="text-lg font-bold text-slate-900">Venue Facilities Manager</h2>
                 </div>
 
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200/60 space-y-4">
+                <div class="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-200/60 space-y-4">
                     <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Requested Amenities</label>
                     
                     <!-- Chips Box -->
                     <div id="selectedFacilitiesBox" class="min-h-[90px] p-4 border border-dashed border-slate-300 rounded-xl bg-white flex flex-wrap gap-2.5 items-start content-start transition-all">
-                        <span class="text-slate-400 text-sm italic w-full text-center py-4" id="emptyFacilitiesText">Please select a venue first.</span>
+                        <span class="text-slate-400 text-sm italic w-full text-center py-4" id="emptyFacilitiesText">No facilities requested yet. Select amenities below and click Add.</span>
                     </div>
 
                     <!-- Input Tray -->
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <select id="facilityDropdown" disabled 
-                            class="flex-grow p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer disabled:bg-slate-200/50 disabled:cursor-not-allowed">
-                            <option value="" disabled selected>Waiting for venue...</option>
+                        <select id="facilityDropdown" 
+                            class="flex-grow p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-slate-800 font-medium text-sm cursor-pointer">
+                            <option value="" disabled selected>Loading amenities...</option>
                         </select>
                         
-                        <input type="number" id="facilityQuantity" min="1" placeholder="Qty" disabled
-                            class="w-full sm:w-24 p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-center text-slate-800 font-bold text-sm disabled:bg-slate-200/50 disabled:cursor-not-allowed">
+                        <input type="number" id="facilityQuantity" min="1" placeholder="Qty"
+                            class="w-full sm:w-24 p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-center text-slate-800 font-bold text-sm">
                         
-                        <button type="button" id="addFacilityBtn" disabled
-                            class="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-blue-500/10">
+                        <button type="button" id="addFacilityBtn"
+                            class="w-full sm:w-auto bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all font-semibold text-sm shadow-md shadow-blue-500/10">
                             Add
                         </button>
                     </div>
@@ -188,7 +202,7 @@
             <!-- Submit Panel -->
             <div class="pt-6 border-t border-slate-100 flex flex-col items-center">
                 <button type="submit"
-                    class="w-full md:w-auto md:px-12 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 hover:scale-[1.01] transition-all shadow-lg shadow-blue-500/20 active:scale-[0.99] text-sm">
+                    class="w-full sm:w-auto sm:px-12 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 hover:scale-[1.01] transition-all shadow-lg shadow-blue-500/20 active:scale-[0.99] text-sm">
                     Submit Booking Request
                 </button>
                 <div id="statusMessage" class="mt-6 text-center text-sm font-semibold hidden"></div>
@@ -203,8 +217,43 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         
-        // --- 1. POPULATE STATIC DROPDOWNS ---
-        async function fetchAndPopulate(url, selectElementId, defaultText) {
+        // --- DATE RESTRICTIONS (No Past Dates, End Time > Start Time) ---
+        const startTimeInput = document.getElementById('start_time');
+        const endTimeInput = document.getElementById('end_time');
+
+        if (startTimeInput && endTimeInput) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            
+            startTimeInput.min = minDateTime;
+            endTimeInput.min = minDateTime;
+
+            startTimeInput.addEventListener('change', function() {
+                if (this.value) {
+                    endTimeInput.min = this.value;
+                    if (endTimeInput.value && endTimeInput.value <= this.value) {
+                        endTimeInput.value = '';
+                        alert("End time reset! End time must be strictly after the start time.");
+                    }
+                }
+            });
+
+            endTimeInput.addEventListener('change', function() {
+                if (startTimeInput.value && this.value <= startTimeInput.value) {
+                    alert("End time must be strictly after the start time.");
+                    this.value = '';
+                }
+            });
+        }
+
+        // --- 1. POPULATE DROPDOWNS WITH 'OTHER / CUSTOM' OPTION ---
+        async function fetchAndPopulate(url, selectElementId, defaultText, otherLabel) {
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Network response was not ok');
@@ -218,22 +267,65 @@
                     option.textContent = item.name;
                     selectElement.appendChild(option);
                 });
+
+                // Append Custom / Other option
+                if (otherLabel) {
+                    const otherOption = document.createElement("option");
+                    otherOption.value = "other";
+                    otherOption.textContent = otherLabel;
+                    selectElement.appendChild(otherOption);
+                }
             } catch (error) {
                 console.error(`Error fetching ${selectElementId}:`, error);
             }
         }
 
-        // Fetch clubs, event types, and venues on page load
-        fetchAndPopulate('/api/clubs', 'club', 'Select Club...');
-        fetchAndPopulate('/api/event-types', 'event_type', 'Select Event Type...');
-        fetchAndPopulate('/api/venues', 'venue', 'Select Venue...');
+        // Fetch dropdowns
+        fetchAndPopulate('/api/clubs', 'club', 'Select Club...', 'Other / Custom Club...');
+        fetchAndPopulate('/api/event-types', 'event_type', 'Select Event Type...', 'Other (Custom Event Type)...');
+        fetchAndPopulate('/api/venues', 'venue', 'Select Venue...', 'Other / Custom Venue...');
 
 
-        // --- 2. DYNAMIC FACILITY MANAGER LOGIC ---
+        // --- 2. DYNAMIC CUSTOM FIELD TOGGLERS ---
+        const eventTypeSelect = document.getElementById('event_type');
+        const customEventTypeDiv = document.getElementById('custom_event_type_div');
+        const customEventTypeInput = document.getElementById('custom_event_type');
+
+        const clubSelect = document.getElementById('club');
+        const customClubDiv = document.getElementById('custom_club_div');
+        const customClubInput = document.getElementById('custom_club_name');
+
+        const venueSelect = document.getElementById('venue');
+        const customVenueDiv = document.getElementById('custom_venue_div');
+        const customVenueInput = document.getElementById('custom_venue_name');
+
+        eventTypeSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                customEventTypeDiv.classList.remove('hidden');
+                customEventTypeInput.required = true;
+            } else {
+                customEventTypeDiv.classList.add('hidden');
+                customEventTypeInput.required = false;
+                customEventTypeInput.value = '';
+            }
+        });
+
+        clubSelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                customClubDiv.classList.remove('hidden');
+                customClubInput.required = true;
+            } else {
+                customClubDiv.classList.add('hidden');
+                customClubInput.required = false;
+                customClubInput.value = '';
+            }
+        });
+
+
+        // --- 3. DYNAMIC FACILITY MANAGER LOGIC ---
         let availableFacilities = []; 
         let selectedFacilitiesList = [];
 
-        const venueSelect = document.getElementById('venue');
         const facilityDropdown = document.getElementById('facilityDropdown');
         const facilityQuantity = document.getElementById('facilityQuantity');
         const addFacilityBtn = document.getElementById('addFacilityBtn');
@@ -241,96 +333,97 @@
         const emptyText = document.getElementById('emptyFacilitiesText');
         const hiddenJsonInput = document.getElementById('facilities_json');
 
-        // Fetch facilities when venue changes
-        venueSelect.addEventListener('change', async function() {
-            const venueId = this.value;
-            if (!venueId) return;
-
-            // Reset UI
-            facilityDropdown.innerHTML = '<option value="" disabled selected>Loading facilities...</option>';
-            selectedFacilitiesList = [];
-            updateFacilitiesUI();
-
+        // Load all facilities on page load so controls are ALWAYS ACTIVE
+        async function loadInitialFacilities() {
             try {
-                const response = await fetch(`/api/facilities/${venueId}`);
+                const response = await fetch('/api/facilities/all');
                 availableFacilities = await response.json();
-
-                facilityDropdown.innerHTML = '<option value="" disabled selected>Select a facility...</option>';
-                
-                if (availableFacilities.length === 0) {
-                    facilityDropdown.innerHTML = '<option value="" disabled selected>No facilities available here.</option>';
-                    emptyText.textContent = "No facilities available for this venue.";
-                    return;
-                }
-
-                emptyText.textContent = "No facilities added yet.";
-
-                // Populate Dropdown
+                facilityDropdown.innerHTML = '<option value="" disabled selected>Select an amenity (Chairs, Mics, Tables...)</option>';
                 availableFacilities.forEach(f => {
                     const option = document.createElement('option');
                     option.value = f.id;
-                    option.textContent = `${f.name} (Max: ${f.max_quantity})`;
-                    option.dataset.max = f.max_quantity;
+                    option.textContent = f.name;
+                    option.dataset.max = 999;
                     option.dataset.name = f.name;
                     facilityDropdown.appendChild(option);
                 });
+            } catch (e) {
+                console.error("Facility load error", e);
+                facilityDropdown.innerHTML = '<option value="" disabled selected>Error loading amenities</option>';
+            }
+        }
+        loadInitialFacilities();
 
-                // Unlock controls
-                facilityDropdown.disabled = false;
-                facilityQuantity.disabled = false;
-                addFacilityBtn.disabled = false;
+        // Optional venue filtering
+        venueSelect.addEventListener('change', async function() {
+            const venueId = this.value;
 
+            if (venueId === 'other') {
+                customVenueDiv.classList.remove('hidden');
+                customVenueInput.required = true;
+                return;
+            } else {
+                customVenueDiv.classList.add('hidden');
+                customVenueInput.required = false;
+                customVenueInput.value = '';
+            }
+
+            if (!venueId) return;
+
+            try {
+                const response = await fetch(`/api/facilities/${venueId}`);
+                const venueFacilities = await response.json();
+                if (venueFacilities && venueFacilities.length > 0) {
+                    facilityDropdown.innerHTML = '<option value="" disabled selected>Select an amenity for venue...</option>';
+                    venueFacilities.forEach(f => {
+                        const option = document.createElement('option');
+                        option.value = f.id;
+                        option.textContent = `${f.name} (Max: ${f.max_quantity || 100})`;
+                        option.dataset.max = f.max_quantity || 100;
+                        option.dataset.name = f.name;
+                        facilityDropdown.appendChild(option);
+                    });
+                }
             } catch (error) {
-                console.error("Error fetching facilities:", error);
-                facilityDropdown.innerHTML = '<option value="" disabled selected>Error loading facilities.</option>';
+                console.error("Error updating venue facilities:", error);
             }
         });
 
-        // Update the max HTML attribute AND reset box to EMPTY when a new facility is chosen
         facilityDropdown.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (!selectedOption || !selectedOption.value) return;
 
-            // Explicitly tell the browser's up/down arrows the NEW limit
-            const maxAllowed = selectedOption.dataset.max;
+            const maxAllowed = selectedOption.dataset.max || 999;
             facilityQuantity.setAttribute('max', maxAllowed);
             facilityQuantity.max = maxAllowed; 
-
-            // Leave the box blank for the user to type
             facilityQuantity.value = ''; 
         });
 
-        // The Quantity Listener (stops them from typing over the max limit)
         facilityQuantity.addEventListener('input', function() {
             const selectedOption = facilityDropdown.options[facilityDropdown.selectedIndex];
             if (!selectedOption || !selectedOption.value) return;
 
             const currentMax = parseInt(selectedOption.dataset.max) || 999;
-            
-            if (this.value === '') return; // Allow the box to be empty
+            if (this.value === '') return;
             
             const currentValue = parseInt(this.value);
 
             if (currentValue > currentMax) {
                 this.value = currentMax;
             } else if (currentValue < 1) {
-                // If they type 0 or a negative, just empty the box so they can try again
                 this.value = '';
             }
         });
 
-        // Click "Add" to create a chip
         addFacilityBtn.addEventListener('click', function() {
             const selectedOption = facilityDropdown.options[facilityDropdown.selectedIndex];
             
-            if (!selectedOption.value) {
+            if (!selectedOption || !selectedOption.value) {
                 alert("Please select a facility first.");
                 return;
             }
 
             const qty = parseInt(facilityQuantity.value);
-            
-            // New Safety Check: Make sure they actually typed a valid number
             if (isNaN(qty) || qty < 1) {
                 alert("Please enter a valid quantity before adding.");
                 return;
@@ -341,19 +434,17 @@
 
             const existingIndex = selectedFacilitiesList.findIndex(f => f.id === id);
             if (existingIndex > -1) {
-                alert("Facility already added! Remove it first if you want to change the quantity.");
+                alert("Facility already added!");
                 return;
             }
 
             selectedFacilitiesList.push({ id: id, name: name, quantity: qty });
             updateFacilitiesUI();
 
-            // Reset inputs for next selection (leaving quantity blank)
             facilityDropdown.selectedIndex = 0;
             facilityQuantity.value = '';
         });
 
-        // Draw the chips and update the hidden JSON input
         function updateFacilitiesUI() {
             hiddenJsonInput.value = JSON.stringify(selectedFacilitiesList);
             selectedBox.innerHTML = '';
@@ -377,14 +468,13 @@
             });
         }
 
-        // Global function to remove a chip
         window.removeFacility = function(idToRemove) {
             selectedFacilitiesList = selectedFacilitiesList.filter(f => f.id !== idToRemove);
             updateFacilitiesUI();
         };
 
 
-        // --- 3. FORM SUBMISSION LOGIC ---
+        // --- 4. FORM SUBMISSION LOGIC ---
         document.getElementById('eventForm').addEventListener('submit', async function(e) {
             e.preventDefault(); 
             
@@ -410,10 +500,15 @@
                     statusMsg.textContent = "✅ Event submitted successfully!";
                     statusMsg.className = "mt-6 text-center text-sm font-bold text-green-600 block";
                     
-                    // Clear the form and reset custom UI elements
                     this.reset(); 
                     selectedFacilitiesList = [];
                     updateFacilitiesUI();
+                    
+                    // Hide custom inputs
+                    customEventTypeDiv.classList.add('hidden');
+                    customClubDiv.classList.add('hidden');
+                    customVenueDiv.classList.add('hidden');
+                    
                     facilityDropdown.innerHTML = '<option value="" disabled selected>Waiting for venue...</option>';
                     facilityDropdown.disabled = true;
                     facilityQuantity.disabled = true;

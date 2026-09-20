@@ -1,71 +1,83 @@
 """
 Venue Booking System - Main Application
-Flask backend for managing venue bookings
+Flask backend connected to Neon PostgreSQL, Cloudinary, and SMTP Email Notifier
 """
 
-import email
-from flask import flash
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
-from supabase import create_client, Client
 import os
-from dotenv import load_dotenv
-from functools import wraps
-import requests
 import json
 import time
-from werkzeug.utils import secure_filename
+import uuid
+from datetime import datetime, date
+from functools import wraps
+import bcrypt
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, flash
+from flask.json.provider import DefaultJSONProvider
+from dotenv import load_dotenv
 
-try:
-    r = requests.get("https://google.com")
-    print("Internet OK:", r.status_code)
-except Exception as e:
-    print("Internet FAIL:", e)
+import db
+import mailer
+import cloud_storage
 
 load_dotenv()
 
 app = Flask(__name__)
-
-app.secret_key = os.getenv('APP_SECRET_KEY', 'super-secret-key-change-this')
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
-SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ ERROR: Missing SUPABASE_URL or SUPABASE_ANON_KEY")
-    exit(1)
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-if SERVICE_KEY:
-    service_supabase: Client = create_client(SUPABASE_URL, SERVICE_KEY)
+app.secret_key = os.getenv('APP_SECRET_KEY', 'venuebooking@123')
 
 
-# ==================== Security Decorators ====================
+class CustomJSONProvider(DefaultJSONProvider):
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            return str(obj)
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+app.json_provider_class = CustomJSONProvider
+app.json = CustomJSONProvider(app)
+
+
+# ==================== Security & Helper Decorators ====================
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("login"))
+        user_exists = db.fetch_one("SELECT id FROM users WHERE id = %s AND is_active = true", (session["user"],))
+        if not user_exists:
+            session.clear()
+            flash("Session expired or invalid user. Please log in again.", "info")
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
+
 
 def pro_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user" not in session:
             return redirect(url_for("login"))
-            
-        # GOD MODE: Allow PRO and Admin
+        user_exists = db.fetch_one("SELECT id FROM users WHERE id = %s AND is_active = true", (session["user"],))
+        if not user_exists:
+            session.clear()
+            flash("Session expired. Please log in again.", "info")
+            return redirect(url_for("login"))
         if session.get("role") not in ["pro", "admin"]:
             flash("Access denied. PRO role required.", "error")
             return redirect(url_for("index"))
-            
         return f(*args, **kwargs)
     return decorated_function
+
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if "user" not in session:
+            return redirect(url_for("login"))
+        user_exists = db.fetch_one("SELECT id FROM users WHERE id = %s AND is_active = true", (session["user"],))
+        if not user_exists:
+            session.clear()
+            flash("Session expired. Please log in again.", "info")
             return redirect(url_for("login"))
         if session.get("role") != "admin":
             flash("Access denied. Admin role required.", "error")
@@ -74,71 +86,93 @@ def admin_required(f):
     return decorated_function
 
 
-# ==================== Auth Routes ====================
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-    if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"].lower().strip()
-        password = request.form["password"]
-        
-        if not email.endswith("@saintgits.org"):
-            flash("Only Saintgits email addresses are allowed.", "error")
-            return redirect(url_for("signup"))
-            
-        reserved_accounts = [
-            "hodcse@saintgits.org", 
-            "hodeee@saintgits.org", 
-            "pro@saintgits.org", 
-            "admin@saintgits.org"
-        ]
-        
-        if email in reserved_accounts:
-            flash("This email address is reserved for specific users.", "error")
-            return redirect(url_for("signup"))
-            
-        try:
-            response = supabase.auth.sign_up({
-                "email": email,
-                "password": password
-            })
+@app.template_filter('format_datetime')
+def format_datetime(value, format='%b %d, %Y %I:%M %p'):
+    if not value:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime(format)
+    try:
+        dt = datetime.fromisoformat(str(value).replace('Z', ''))
+        return dt.strftime(format)
+    except Exception:
+        return str(value)[:16]
 
-            if response.user:
-                supabase.table("users").insert({
-                    "id": response.user.id,
-                    "email": response.user.email,
-                    "user_name": name,
-                    "role": "student",
-                    "is_active": True
-                }).execute()
-                
-                return redirect(url_for("login"))
 
-        except Exception as e:
-            error = str(e)
-            if "already exists" in error.lower() or "already registered" in error.lower():
-                flash("An account with this email already exists. Please login.", "error")
-            else:
-                flash("Something went wrong. Please try again.", "error")
-            return redirect(url_for("signup"))
-            
-    return render_template("signup.html")
+@app.template_filter('format_date')
+def format_date(value, format='%b %d, %Y'):
+    if not value:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime(format)
+    try:
+        dt = datetime.fromisoformat(str(value).replace('Z', ''))
+        return dt.strftime(format)
+    except Exception:
+        return str(value)[:10]
+
 
 @app.context_processor
 def inject_base_template():
-    # Default to user_base if not logged in or not defined
     role = session.get("role", "student")
-    
     if role == "admin":
         base = "admin_base.html"
     elif role == "pro":
         base = "pro_base.html"
-    elif role.startswith("hod"):
+    elif role == "hod":
         base = "hod_base.html"
     else:
         base = "user_base.html"
-        
     return dict(base_template=base)
+
+
+# ==================== Auth Routes ====================
+
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        name = request.form["name"].strip()
+        email = request.form["email"].lower().strip()
+        password = request.form["password"]
+
+        if not email.endswith("@saintgits.org"):
+            flash("Only Saintgits email addresses (@saintgits.org) are allowed.", "error")
+            return redirect(url_for("signup"))
+
+        reserved_accounts = [
+            "hodcse@saintgits.org", 
+            "hodeee@saintgits.org", 
+            "hodmech@saintgits.org",
+            "hodcivil@saintgits.org",
+            "hodit@saintgits.org",
+            "pro@saintgits.org", 
+            "admin@saintgits.org"
+        ]
+
+        if email in reserved_accounts:
+            flash("This email address is reserved for system administrators and HODs.", "error")
+            return redirect(url_for("signup"))
+
+        existing_user = db.fetch_one("SELECT id FROM users WHERE email = %s", (email,))
+        if existing_user:
+            flash("An account with this email already exists. Please login.", "error")
+            return redirect(url_for("signup"))
+
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+        db.execute_query(
+            """
+            INSERT INTO users (email, password_hash, user_name, role)
+            VALUES (%s, %s, %s, 'student')
+            """,
+            (email, password_hash, name)
+        )
+
+        flash("Account created successfully! Please log in.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("signup.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -146,44 +180,30 @@ def login():
         email = request.form["email"].lower().strip()
         password = request.form["password"]
 
-        try:
-            response = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
+        user = db.fetch_one("SELECT * FROM users WHERE email = %s AND is_active = true", (email,))
 
-            if response.user:
-                session["user"] = response.user.id
-                session["email"] = response.user.email
-                
-                user_record = (
-                    supabase.table("users")
-                    .select("*")
-                    .eq("id", response.user.id)
-                    .single()
-                    .execute()
-                )
-                
-                session["role"] = user_record.data["role"]
-                session["user_name"] = user_record.data["user_name"]
-                
-                role = session["role"]
-                
-                # --- MERGED ROUTING LOGIC ---
-                if role.startswith("hod"):
+        if user and user.get("password_hash"):
+            if bcrypt.checkpw(password.encode('utf-8'), user["password_hash"].encode('utf-8')):
+                session["user"] = str(user["id"])
+                session["email"] = user["email"]
+                session["role"] = user["role"]
+                session["user_name"] = user["user_name"]
+
+                role = user["role"]
+                if role == "hod":
                     return redirect(url_for("hod_dashboard"))
                 elif role == "pro":
                     return redirect(url_for("pro_dashboard"))
                 elif role == "admin":
-                    return redirect(url_for("admin_dashboard")) 
+                    return redirect(url_for("admin_dashboard"))
                 else:
                     return redirect(url_for("dashboard"))
-                    
-        except Exception as e:
-            flash("Invalid email or password.", "error")
-            return redirect(url_for("login"))
-            
+
+        flash("Invalid email or password.", "error")
+        return redirect(url_for("login"))
+
     return render_template("login.html")
+
 
 @app.route("/logout")
 def logout():
@@ -192,360 +212,277 @@ def logout():
 
 
 # ==================== Core Dashboards ====================
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    events = (
-        supabase.table("dashboard_events_view")
-        .select("*")
-        .eq("created_by", session["user"])
-        .order("start_time")
-        .execute()
+    events = db.fetch_all(
+        "SELECT * FROM dashboard_events_view WHERE created_by = %s ORDER BY start_time DESC",
+        (session["user"],)
     )
-    
-    return render_template(
-        "dashboard.html", 
-        events=events.data, 
-        user_name=session.get("user_name")
-    )
+    return render_template("dashboard.html", events=events, user_name=session.get("user_name"))
 
 
 # ==================== HOD Routes ====================
+
 @app.route("/hod/dashboard")
 @login_required
 def hod_dashboard():
-    pending_events = (
-        supabase.table("Events")
-        .select("*")
-        .eq("assigned_to", session["user"])
-        .eq("status", "Pending")
-        .execute()
-    )
+    user_id = session["user"]
     
-    approved_events = (
-        supabase.table("Events")
-        .select("*")
-        .eq("assigned_to", session["user"])
-        .eq("status", "Approved")
-        .execute()
+    pending_events = db.fetch_all(
+        "SELECT * FROM dashboard_events_view WHERE (assigned_to = %s OR assigned_to = %s) AND status = 'Pending' ORDER BY start_time ASC",
+        (user_id, session.get("email"))
     )
-    
-    rejected_events = (
-        supabase.table("Events")
-        .select("*")
-        .eq("assigned_to", session["user"])
-        .eq("status", "Rejected")
-        .execute()
+    approved_events = db.fetch_all(
+        "SELECT * FROM dashboard_events_view WHERE (assigned_to = %s OR assigned_to = %s) AND status = 'Approved' ORDER BY start_time DESC",
+        (user_id, session.get("email"))
+    )
+    rejected_events = db.fetch_all(
+        "SELECT * FROM dashboard_events_view WHERE (assigned_to = %s OR assigned_to = %s) AND status = 'Rejected' ORDER BY start_time DESC",
+        (user_id, session.get("email"))
     )
 
     return render_template(
         "hod_dashboard.html",
-        pending_events=pending_events.data,
-        approved_events=approved_events.data,
-        rejected_events=rejected_events.data,
-        user_email=session["email"]
+        pending_events=pending_events,
+        approved_events=approved_events,
+        rejected_events=rejected_events,
+        user_email=session.get("email")
     )
-    
+
+
 @app.route("/approve-event/<event_id>", methods=["POST"])
 @login_required
 def approve_event(event_id):
-    (
-        supabase.table("Events")
-        .update({
-            "status": "Approved",
-            "approved_by": session["user"]
-        })
-        .eq("id", event_id)
-        .execute()
+    db.execute_query(
+        """
+        UPDATE "Events" 
+        SET status = 'Approved', approved_by = %s 
+        WHERE id = %s
+        """,
+        (session["user"], event_id)
     )
+
+    # Trigger Email Notification to Event Coordinator
+    event = db.fetch_one(
+        """
+        SELECT e.title, v.name as venue_name, u.email as creator_email 
+        FROM "Events" e 
+        JOIN venues v ON e.venue_id = v.id 
+        JOIN users u ON e.created_by = u.id 
+        WHERE e.id = %s
+        """,
+        (event_id,)
+    )
+    if event:
+        mailer.notify_status_update(event["creator_email"], event["title"], event["venue_name"], "Approved")
+
+    flash("Event request approved.", "success")
     return redirect(url_for("hod_dashboard"))
+
 
 @app.route("/reject-event/<event_id>", methods=["POST"])
 @login_required
 def reject_event(event_id):
-    remark = request.form.get("remark")
+    remark = request.form.get("remark", "")
     
-    (
-        supabase.table("Events")
-        .update({
-            "status": "Rejected",
-            "approved_by": session["user"],
-            "rejection_reason": remark
-        })
-        .eq("id", event_id)
-        .execute()
+    db.execute_query(
+        """
+        UPDATE "Events" 
+        SET status = 'Rejected', approved_by = %s, rejection_reason = %s 
+        WHERE id = %s
+        """,
+        (session["user"], remark, event_id)
     )
+
+    # Trigger Email Notification to Event Coordinator
+    event = db.fetch_one(
+        """
+        SELECT e.title, v.name as venue_name, u.email as creator_email 
+        FROM "Events" e 
+        JOIN venues v ON e.venue_id = v.id 
+        JOIN users u ON e.created_by = u.id 
+        WHERE e.id = %s
+        """,
+        (event_id,)
+    )
+    if event:
+        mailer.notify_status_update(event["creator_email"], event["title"], event["venue_name"], "Rejected", remark)
+
+    flash("Event request rejected.", "info")
     return redirect(url_for("hod_dashboard"))
 
 
 # ==================== PRO Routes ====================
+
 @app.route("/pro-dashboard")
 @pro_required
 def pro_dashboard():
-    events = (
-        supabase.table("dashboard_events_view")
-        .select("*")
-        .neq("status", "Cancelled")
-        .order("start_time")
-        .execute()
-    )
-    return render_template(
-        "pro_dashboard.html", 
-        events=events.data, 
-        user_name=session.get("user_name")
-    )
+    events = db.fetch_all("SELECT * FROM dashboard_events_view WHERE status != 'Cancelled' ORDER BY start_time ASC")
+    return render_template("pro_dashboard.html", events=events, user_name=session.get("user_name"))
+
 
 @app.route('/api/pro-calendar-events', methods=['GET'])
 @pro_required
 def get_pro_calendar_events():
     try:
-        response = (
-            supabase.table('dashboard_events_view')
-            .select('id, title, start_time, end_time, venue_name, club_name, status, pro_status, assigned_to')
-            .neq('status', 'Cancelled')
-            .execute()
-        )
-        
-        color_map = {
-            'Approved': {'bg': '#059669', 'border': '#047857'}, 
-            'Rejected': {'bg': '#dc2626', 'border': '#b91c1c'}
-        }
-        default_color = {'bg': '#d97706', 'border': '#b45309'}
-        
+        events = db.fetch_all("SELECT * FROM dashboard_events_view WHERE status != 'Cancelled'")
         formatted = []
-        for item in response.data:
+        for item in events:
             pro_st = item.get('pro_status', 'Pending')
-            colors = color_map.get(pro_st, default_color)
+            colors = {'bg': '#059669', 'border': '#047857'} if pro_st == 'Approved' else {'bg': '#d97706', 'border': '#b45309'}
             
+            start_val = item['start_time']
+            end_val = item['end_time']
+            start_str = start_val.isoformat() if hasattr(start_val, 'isoformat') else str(start_val)
+            end_str = end_val.isoformat() if hasattr(end_val, 'isoformat') else str(end_val)
+
             formatted.append({
-                'id': item['id'],
-                'title': f"{item['title']} ({item['venue_name']})",
-                'start': item['start_time'],
-                'end': item['end_time'],
+                'id': str(item['id']),
+                'title': f"{item['title']} ({item.get('venue_name', 'Venue')})",
+                'start': start_str,
+                'end': end_str,
                 'backgroundColor': colors['bg'],
                 'borderColor': colors['border'],
                 'extendedProps': {
                     'venue_name': item.get('venue_name'),
                     'club_name': item.get('club_name'),
                     'status': item.get('status'),
-                    'pro_status': pro_st,
-                    'assigned_to': item.get('assigned_to'),
+                    'pro_status': pro_st
                 }
             })
-            
         return jsonify(formatted), 200
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/pro-event/<event_id>', methods=['GET'])
 @pro_required
 def get_pro_event_detail(event_id):
     try:
-        event = (
-            supabase.table('dashboard_events_view')
-            .select('*')
-            .eq('id', event_id)
-            .single()
-            .execute()
+        event = db.fetch_one("SELECT * FROM dashboard_events_view WHERE id = %s", (event_id,))
+        facilities = db.fetch_all(
+            """
+            SELECT ef.requested_quantity, f.f_name as name 
+            FROM event_facilities ef 
+            JOIN facilities f ON ef.facility_id = f.id 
+            WHERE ef.event_id = %s
+            """,
+            (event_id,)
         )
-        
-        facilities = (
-            supabase.table('event_facilities')
-            .select('requested_quantity, facilities(id, f_name)')
-            .eq('event_id', event_id)
-            .execute()
-        )
-        
-        fac_list = []
-        for f in facilities.data:
-            if f.get('facilities'):
-                fac_list.append({
-                    'name': f['facilities']['f_name'], 
-                    'requested_quantity': f['requested_quantity']
-                })
-                
-        result = event.data
-        result['requested_facilities'] = fac_list
-        
-        return jsonify(result), 200
-        
+        if event:
+            event['requested_facilities'] = facilities
+            return jsonify(event), 200
+        return jsonify({'error': 'Event not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/pro-event/<event_id>/respond', methods=['POST'])
 @pro_required
 def pro_respond_event(event_id):
     try:
         data = request.get_json()
-        new_pro_status = data.get('pro_status') # 'Approved' or 'Rejected'
+        new_pro_status = data.get('pro_status')
         pro_remarks = data.get('pro_remarks', '')
 
-        # 1. Fetch the full Event details
-        event_response = (
-            supabase.table('Events')
-            .select('*')
-            .eq('id', event_id)
-            .single()
-            .execute()
+        event = db.fetch_one("SELECT * FROM \"Events\" WHERE id = %s", (event_id,))
+        if not event:
+            return jsonify({'error': 'Event not found'}), 404
+
+        if event.get('assigned_to') == 'pro' or new_pro_status == 'Rejected':
+            final_status = new_pro_status
+        else:
+            final_status = event.get('status', 'Pending')
+
+        db.execute_query(
+            """
+            UPDATE "Events" 
+            SET pro_status = %s, pro_remarks = %s, status = %s 
+            WHERE id = %s
+            """,
+            (new_pro_status, pro_remarks, final_status, event_id)
         )
-        event = event_response.data
 
-        # 2. Update the PRO status in the Events table
-        supabase.table('Events').update({
-            'pro_status': new_pro_status,
-            'pro_remarks': pro_remarks,
-            'status': new_pro_status # Finalizing status
-        }).eq('id', event_id).execute()
+        if (final_status == 'Approved' or event.get('assigned_to') == 'pro') and new_pro_status == 'Approved':
+            existing_booking = db.fetch_one("SELECT id FROM bookings WHERE event_id = %s", (event_id,))
+            if not existing_booking:
+                db.execute_query(
+                    """
+                    INSERT INTO bookings (event_id, venue_id, event_name, event_description, club_id, start_time, end_time, approval_letter_path, approved_by, created_by)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """,
+                    (
+                        event['id'], event['venue_id'], event['title'], event.get('description'),
+                        event.get('club_id'), event['start_time'], event['end_time'],
+                        event.get('permission_file_url'), session['user'], event['created_by']
+                    )
+                )
 
-        # 3. IF APPROVED: Move to 'bookings' table
-        if new_pro_status == 'Approved':
-            booking_data = {
-                "event_id": event['id'],
-                "venue_id": event['venue_id'],
-                "event_name": event['title'],
-                "event_description": event.get('description'),
-                "club_id": event.get('club_id'),
-                "booking_date": datetime.now().isoformat(), # Today is the day it was finalized
-                "start_time": event['start_time'],
-                "end_time": event['end_time'],
-                "approval_letter_path": event.get('permission_file_url'),
-                "approved_by": session['user'], # The PRO's UUID
-                "created_by": event['created_by'],
-                "created_at": event['created_at']
-            }
-            
-            supabase.table('bookings').insert(booking_data).execute()
+        creator = db.fetch_one("SELECT email FROM users WHERE id = %s", (event['created_by'],))
+        venue = db.fetch_one("SELECT name FROM venues WHERE id = %s", (event['venue_id'],))
+        if creator:
+            mailer.notify_status_update(creator['email'], event['title'], venue['name'] if venue else 'Venue', new_pro_status, pro_remarks)
 
         return jsonify({'message': f'Event {new_pro_status} successfully'}), 200
-        
     except Exception as e:
-        print("PRO Approval Error:", str(e))
         return jsonify({'error': str(e)}), 500
-    
+
+
+
 # ==================== Admin Routes ====================
+
 @app.route("/admin/dashboard")
 @admin_required
 def admin_dashboard():
-    # This is the new home page with the Calendar and Grid
     return render_template("admin_dashboard.html", user_name=session.get("user_name"))
+
 
 @app.route("/admin/users")
 @admin_required
 def admin_users():
-    # Security check
-    if session.get("role") != "admin":
-        return redirect("/calendar-redirect")
-        
-    # Fetch all users for the table
-    users_response = supabase.table("users").select("*").execute()
-    users = users_response.data
-    
-    # NEW: Fetch departments for the dynamic dropdown
-    dept_response = supabase.table("department").select("id, name").execute()
-    departments = dept_response.data
-
+    users = db.fetch_all("SELECT * FROM users ORDER BY created_at DESC")
+    departments = db.fetch_all("SELECT id, name FROM department ORDER BY name ASC")
     return render_template("admin_users.html", users=users, departments=departments)
 
-from flask import request, jsonify
 
 @app.route("/api/admin/users/add", methods=["POST"])
-@login_required # (Or @admin_required)
-def api_add_user():
-    # Make sure only admins can do this
-    if session.get("role") != "admin":
-        return jsonify({"error": "Unauthorized"}), 403
-
-    data = request.json
-    
-    email = data.get("email")
-    password = data.get("password")
-    user_name = data.get("user_name")
-    phone_number = data.get("contact_number")
-    role = data.get("role")
-    department_id = data.get("department") # This is the UUID from the dropdown
-
-    try:
-        # 1. Create user in Supabase Auth (Must use service_supabase/God Mode key)
-        auth_response = service_supabase.auth.admin.create_user({
-            "email": email,
-            "password": password,
-            "email_confirm": True
-        })
-        new_user_id = auth_response.user.id
-
-        # 2. Add profile to our public users table
-        user_insert_data = {
-            "id": new_user_id,
-            "email": email,
-            "user_name": user_name,
-            "phone_number": phone_number,
-            "role": role,
-            # If they are Admin or PRO, department is null. Otherwise, save the UUID.
-            "department_id": department_id if role in ['student', 'hod'] else None
-        }
-        supabase.table("users").insert(user_insert_data).execute()
-
-        # 3. Auto-link HOD to their Department
-        if role == "hod" and department_id:
-            supabase.table("department").update({
-                "hod_name": user_name,
-                "hod_id": new_user_id
-            }).eq("id", department_id).execute()
-
-        # Tell Javascript it was a success! (This triggers the green toast)
-        return jsonify({"success": True, "message": "User created successfully!"}), 200
-        
-    except Exception as e:
-        print("Error creating user:", e)
-        # Tell Javascript there was an error
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/admin/users/edit", methods=["PUT"])
 @admin_required
-def api_edit_user():
+def api_add_user():
     data = request.json
-    user_id = data.get("user_id")
-    email = data.get("email")
-    password = data.get("password") # Optional
+    email = data.get("email").lower().strip()
+    password = data.get("password")
     user_name = data.get("user_name")
     phone_number = data.get("contact_number")
     role = data.get("role")
     department_id = data.get("department")
 
     try:
-        # 1. Update Supabase Auth Details
-        auth_update = {"email": email}
-        if password: # Only update password if they typed a new one
-            auth_update["password"] = password
-            
-        service_supabase.auth.admin.update_user_by_id(user_id, auth_update)
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        user_res = db.fetch_one(
+            """
+            INSERT INTO users (email, password_hash, user_name, phone_number, role, department_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (email, password_hash, user_name, phone_number, role, department_id if role in ['student', 'hod'] else None)
+        )
 
-        # 2. Update Public Users Table
-        user_update_data = {
-            "email": email,
-            "user_name": user_name,
-            "phone_number": phone_number,
-            "role": role,
-            "department_id": department_id if role in ['student', 'hod'] else None
-        }
-        supabase.table("users").update(user_update_data).eq("id", user_id).execute()
-
-        # 3. Handle HOD reassignment if applicable
         if role == "hod" and department_id:
-            supabase.table("department").update({
-                "hod_name": user_name,
-                "hod_id": user_id
-            }).eq("id", department_id).execute()
+            db.execute_query(
+                "UPDATE department SET hod_name = %s, hod_id = %s WHERE id = %s",
+                (user_name, user_res['id'], department_id)
+            )
 
-        return jsonify({"success": True, "message": "User updated successfully!"}), 200
-
+        return jsonify({"success": True, "message": "User created successfully!"}), 200
     except Exception as e:
-        print("Error updating user:", e)
         return jsonify({"error": str(e)}), 500
 
 
@@ -553,377 +490,250 @@ def api_edit_user():
 @admin_required
 def api_delete_user(user_id):
     try:
-        # 1. First, check if they are an HOD and remove them from the department table
-        supabase.table("department").update({
-            "hod_name": None,
-            "hod_id": None
-        }).eq("hod_id", user_id).execute()
-
-        # 2. Delete from public users table
-        supabase.table("users").delete().eq("id", user_id).execute()
-
-        # 3. Permanently Delete from Supabase Authentication
-        # (This completely wipes their ability to log in)
-        service_supabase.auth.admin.delete_user(user_id)
-
-        return jsonify({"success": True, "message": "User permanently deleted."}), 200
-
+        db.execute_query("UPDATE department SET hod_name = NULL, hod_id = NULL WHERE hod_id = %s", (user_id,))
+        db.execute_query("DELETE FROM users WHERE id = %s", (user_id,))
+        return jsonify({"success": True, "message": "User deleted successfully."}), 200
     except Exception as e:
-        print("Error deleting user:", e)
         return jsonify({"error": str(e)}), 500
-   
 
-# ==================== Creation Routes ====================
+
+# ==================== Event Creation & Venue Routing ====================
+
 @app.route('/event')
 @login_required
 def event_page():
     return render_template('event.html')
 
+
 @app.route('/api/events', methods=['POST'])
 @login_required
 def create_event():
     try:
-        data = dict(request.form)
-        data["created_by"] = session["user"]
+        form_data = dict(request.form)
+        title = form_data.get("title")
+        description = form_data.get("description", "")
+        start_time = form_data.get("start_time")
+        end_time = form_data.get("end_time")
+        faculty_coordinator = form_data.get("faculty_name") or form_data.get("faculty_coordinator")
+        contact_number = form_data.get("phone") or form_data.get("contact_number")
 
-        # Parse Facilities
-        facilities_to_insert = []
-        if 'facilities_json' in data:
-            facilities_list = json.loads(data['facilities_json'])
-            for item in facilities_list:
-                facilities_to_insert.append({
-                    "facility_id": item['id'], 
-                    "requested_quantity": item['quantity']
-                })
-            data.pop('facilities_json', None)
+        # Validate Date Range & Past Dates
+        if start_time and end_time:
+            try:
+                start_dt = datetime.fromisoformat(start_time)
+                end_dt = datetime.fromisoformat(end_time)
+                now_dt = datetime.now()
+                
+                if start_dt < now_dt:
+                    return jsonify({"error": "Start date/time cannot be in the past!"}), 400
+                if end_dt <= start_dt:
+                    return jsonify({"error": "End date/time must be strictly after the start date/time!"}), 400
+            except ValueError:
+                pass
 
-        # Handle File Upload
+        # 1. Custom Event Type Handler
+        event_type_id = form_data.get("event_type_id")
+        if event_type_id == "other" and form_data.get("custom_event_type"):
+            custom_type = form_data.get("custom_event_type").strip()
+            type_res = db.fetch_one("SELECT id FROM event_types WHERE LOWER(event_type_name) = LOWER(%s)", (custom_type,))
+            if not type_res:
+                type_res = db.fetch_one("INSERT INTO event_types (event_type_name) VALUES (%s) RETURNING id", (custom_type,))
+            event_type_id = str(type_res['id']) if type_res else None
+
+        # 2. Custom Club Handler
+        club_id = form_data.get("club_id")
+        if club_id == "other" and form_data.get("custom_club_name"):
+            custom_club = form_data.get("custom_club_name").strip()
+            club_res = db.fetch_one("SELECT id FROM clubs WHERE LOWER(name) = LOWER(%s)", (custom_club,))
+            if not club_res:
+                club_res = db.fetch_one("INSERT INTO clubs (name, description) VALUES (%s, 'Custom Organization') RETURNING id", (custom_club,))
+            club_id = str(club_res['id']) if club_res else None
+        elif not club_id or club_id == "other":
+            club_id = None
+
+        # 3. Custom Venue Handler
+        venue_id = form_data.get("venue_id")
+        if venue_id == "other" and form_data.get("custom_venue_name"):
+            custom_venue = form_data.get("custom_venue_name").strip()
+            venue_res = db.fetch_one("SELECT id FROM venues WHERE LOWER(name) = LOWER(%s)", (custom_venue,))
+            if not venue_res:
+                venue_res = db.fetch_one("INSERT INTO venues (name, location, description) VALUES (%s, 'Custom Location', 'User specified venue') RETURNING id", (custom_venue,))
+            venue_id = str(venue_res['id']) if venue_res else None
+
+        if not venue_id or venue_id == "other":
+            return jsonify({"error": "Please select or specify a valid venue"}), 400
+
+        # Upload permission letter (Cloudinary / Local)
         permission_file = request.files.get('permission_file')
-        if permission_file and permission_file.filename:
-            original_filename = secure_filename(permission_file.filename)
-            unique_filename = f"{int(time.time())}_{original_filename}"
-            file_bytes = permission_file.read()
-            
-            (
-                service_supabase.storage.from_('approved_letters')
-                .upload(
-                    file=file_bytes, 
-                    path=unique_filename, 
-                    file_options={"content-type": permission_file.content_type}
-                )
-            )
-            
-            data['permission_file_url'] = (
-                service_supabase.storage.from_('approved_letters')
-                .get_public_url(unique_filename)
-            )
+        file_url = cloud_storage.upload_permission_letter(permission_file) if permission_file else None
 
-        # ==========================================
-        # Dynamic HOD Assignment (Updated for Depts)
-        # ==========================================
-        venue_id = data.get("venue_id")
-        
-        # 1. Fetch Venue (Without .single() to avoid 0-row errors)
-        venue_response = (
-            supabase.table("venues")
-            .select("department_id")
-            .eq("id", venue_id)
-            .execute()
-        )
-        
-        # Safely extract department_id
-        dept_id = None
-        if venue_response.data and len(venue_response.data) > 0:
-            dept_id = venue_response.data[0].get("department_id")
-        
-        # 2. THE ROUTING ENGINE
-        if dept_id:
-            # Look up the HOD for that department
-            dept_response = (
-                supabase.table("department")
-                .select("hod_id")
-                .eq("id", dept_id)
-                .execute()
-            )
-            
-            # Safely extract hod_id
-            if dept_response.data and len(dept_response.data) > 0:
-                hod_id = dept_response.data[0].get("hod_id")
-                # If an HOD exists, assign to them. If NULL, assign to PRO.
-                data["assigned_to"] = hod_id if hod_id else "pro"
-            else:
-                data["assigned_to"] = "pro"
-        else:
-            # If the venue has no department_id, it goes to the PRO
-            data["assigned_to"] = "pro"
+        # Dynamic Routing Rule Engine
+        venue = db.fetch_one("SELECT name, department_id FROM venues WHERE id = %s", (venue_id,))
+        assigned_to = "pro"
+        approver_email = "pro@saintgits.org"
 
-        data["status"] = "Pending"
-        data["pro_status"] = "Pending"
+        if venue:
+            venue_name = venue["name"].upper()
+            if "RB" in venue_name:
+                hod_user = db.fetch_one("SELECT id, email FROM users WHERE email = 'hodcse@saintgits.org'")
+                assigned_to = str(hod_user['id']) if hod_user else "pro"
+                approver_email = "hodcse@saintgits.org"
+            elif "EEE" in venue_name:
+                hod_user = db.fetch_one("SELECT id, email FROM users WHERE email = 'hodeee@saintgits.org'")
+                assigned_to = str(hod_user['id']) if hod_user else "pro"
+                approver_email = "hodeee@saintgits.org"
+            elif "MECH" in venue_name:
+                hod_user = db.fetch_one("SELECT id, email FROM users WHERE email = 'hodmech@saintgits.org'")
+                assigned_to = str(hod_user['id']) if hod_user else "pro"
+                approver_email = "hodmech@saintgits.org"
+            elif "VB" in venue_name or "CIVIL" in venue_name:
+                hod_user = db.fetch_one("SELECT id, email FROM users WHERE email = 'hodcivil@saintgits.org'")
+                assigned_to = str(hod_user['id']) if hod_user else "pro"
+                approver_email = "hodcivil@saintgits.org"
+            elif "LAB" in venue_name or "IT" in venue_name:
+                hod_user = db.fetch_one("SELECT id, email FROM users WHERE email = 'hodit@saintgits.org'")
+                assigned_to = str(hod_user['id']) if hod_user else "pro"
+                approver_email = "hodit@saintgits.org"
 
         # Insert Event
-        event_response = (
-            supabase.table("Events")
-            .insert(data)
-            .execute()
+        event_res = db.fetch_one(
+            """
+            INSERT INTO "Events" (title, description, venue_id, club_id, event_type_id, start_time, end_time, faculty_coordinator, contact_number, permission_file_url, assigned_to, created_by, status, pro_status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'Pending', 'Pending')
+            RETURNING id
+            """,
+            (title, description, venue_id, club_id, event_type_id, start_time, end_time, faculty_coordinator, contact_number, file_url, assigned_to, session["user"])
         )
-        
-        new_event_id = event_response.data[0]["id"]
 
-        # Insert Facilities
-        if facilities_to_insert:
-            for facility in facilities_to_insert:
-                facility["event_id"] = new_event_id
-                
-            (
-                supabase.table("event_facilities")
-                .insert(facilities_to_insert)
-                .execute()
-            )
+        event_id = event_res['id']
 
-        return jsonify({
-            "message": "Event created successfully!", 
-            "data": event_response.data
-        }), 201
+        # Insert Facilities Payload
+        if 'facilities_json' in form_data:
+            facilities_list = json.loads(form_data['facilities_json'])
+            for item in facilities_list:
+                db.execute_query(
+                    "INSERT INTO event_facilities (event_id, facility_id, requested_quantity) VALUES (%s, %s, %s)",
+                    (event_id, item['id'], item['quantity'])
+                )
 
+        # Trigger Email Notifications
+        user_name = session.get("user_name", "Event Coordinator")
+        mailer.notify_new_booking(approver_email, title, venue['name'] if venue else 'Selected Venue', f"{start_time} to {end_time}", user_name)
+        if approver_email != "pro@saintgits.org":
+            mailer.notify_new_booking("pro@saintgits.org", title, venue['name'] if venue else 'Selected Venue', f"{start_time} to {end_time}", user_name)
+
+        return jsonify({"message": "Event created successfully!", "event_id": str(event_id)}), 201
     except Exception as e:
-        print("ERROR:", str(e))
+        print("Create Event Error:", e)
         return jsonify({"error": str(e)}), 500
 
-
-# ==================== Venue Routes ====================
-@app.route("/venue", methods=['GET'])
-def venue():
-    locations_response = supabase.table("location").select("*").execute()
-    types_response = supabase.table("venue_type").select("*").execute()
-    facilities_response = supabase.table("facilities").select("*").execute()
-    
-    return render_template(
-        "venue.html", 
-        locations=locations_response.data, 
-        venue_types=types_response.data, 
-        facilities=facilities_response.data
-    )
-
-@app.route("/venues", methods=["POST"])
-def create_venue_api():
-    try:
-        data = request.get_json()
-        
-        insert_data = {
-            "name": data.get("venue_name"),
-            "venue_type_id": data.get("venue_type"),
-            "location_id": data.get("location"),
-            "floor": data.get("floor"),
-            "room_number": data.get("room_number"),
-            "capacity": data.get("capacity"),
-            "description": data.get("description"),
-            "is_active": True,
-            "booking_allowed": True
-        }
-        
-        venue_response = (
-            supabase.table("venues")
-            .insert(insert_data)
-            .execute()
-        )
-        
-        new_venue_id = venue_response.data[0]['id'] 
-
-        facilities = data.get("facilities", [])
-        if facilities:
-            bridge_data = []
-            for item in facilities:
-                bridge_data.append({
-                    "venue_id": new_venue_id, 
-                    "facility_id": item['facility_id'], 
-                    "quantity": int(item['quantity'])
-                })
-                
-            (
-                supabase.table("venue_facilities")
-                .insert(bridge_data)
-                .execute()
-            )
-
-        return jsonify({
-            "success": True, 
-            "message": "Venue created successfully"
-        }), 201
-        
-    except Exception as e:
-        return jsonify({
-            "success": False, 
-            "error": {"message": str(e)}
-        }), 500
-
-
-# ==================== APIs & Utilities ====================
-@app.route('/api/calendar-events', methods=['GET'])
-def get_calendar_events():
-    try:
-        response = (
-            supabase.table('events_view')
-            .select('id, title, start_time, end_time, venue_name')
-            .execute()
-        )
-        
-        formatted = []
-        for i in response.data:
-            formatted.append({
-                'id': i['id'], 
-                'title': f"{i['title']} ({i['venue_name']})", 
-                'start': i['start_time'], 
-                'end': i['end_time'], 
-                'backgroundColor': '#2563eb', 
-                'borderColor': '#1d4ed8'
-            })
-            
-        return jsonify(formatted), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/clubs', methods=['GET'])
-def get_clubs():
-    response = supabase.table('clubs').select('id, name').execute()
-    return jsonify(response.data), 200
-
-@app.route('/api/venues', methods=['GET'])
-def get_venues():
-    response = supabase.table('venues').select('id, name').execute()
-    return jsonify(response.data), 200
-
-@app.route('/api/event-types', methods=['GET'])
-def get_event_types():
-    response = supabase.table('event_types').select('id, event_type_name').execute()
-    
-    data = []
-    for i in response.data:
-        data.append({
-            'id': i['id'], 
-            'name': i['event_type_name']
-        })
-        
-    return jsonify(data), 200
-
-@app.route('/api/facilities/<venue_id>', methods=['GET'])
-def get_facilities_for_venue(venue_id):
-    try:
-        response = (
-            supabase.table('venue_facilities')
-            .select('facility_id, quantity, facilities(id, f_name)')
-            .eq('venue_id', venue_id)
-            .execute()
-        )
-        
-        data = []
-        for i in response.data:
-            if i.get('facilities'):
-                data.append({
-                    'id': i['facilities']['id'], 
-                    'name': i['facilities']['f_name'], 
-                    'max_quantity': i['quantity']
-                })
-                
-        return jsonify(data), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route("/cancel-event/<event_id>", methods=["POST"])
 @login_required
 def cancel_event(event_id):
-    (
-        supabase.table("Events")
-        .update({
-            "status": "Cancelled", 
-            "cancellation_reason": request.form.get("reason")
-        })
-        .eq("id", event_id)
-        .execute()
+    reason = request.form.get("reason", "No reason provided")
+    
+    event = db.fetch_one(
+        """
+        SELECT e.title, v.name as venue_name, e.assigned_to 
+        FROM "Events" e 
+        JOIN venues v ON e.venue_id = v.id 
+        WHERE e.id = %s
+        """,
+        (event_id,)
     )
+
+    db.execute_query(
+        "UPDATE \"Events\" SET status = 'Cancelled', cancellation_reason = %s WHERE id = %s",
+        (reason, event_id)
+    )
+
+    if event:
+        mailer.notify_event_cancellation("pro@saintgits.org", event["title"], event["venue_name"], reason)
+
+    flash("Event cancelled successfully.", "info")
     return redirect(url_for("dashboard"))
 
-@app.route("/profile", methods=["GET", "POST"])
-@login_required
-def profile():
-    if request.method == "POST":
-        try:
-            (
-                supabase.table("users")
-                .update({
-                    "user_name": request.form.get("user_name"), 
-                    "phone_number": request.form.get("phone_number"), 
-                    "department_id": request.form.get("department_id")
-                })
-                .eq("id", session.get("user"))
-                .execute()
-            )
-            session["user_name"] = request.form.get("user_name")
-            flash("Profile updated successfully!", "success")
-            
-        except Exception as e:
-            flash("Failed to update profile.", "error")
-            
-        return redirect(url_for("profile"))
 
-    user_record = (
-        supabase.table("users")
-        .select("*")
-        .eq("id", session.get("user"))
-        .single()
-        .execute()
-    )
-    
-    dept_response = (
-        supabase.table("department")
-        .select("*")
-        .order("name")
-        .execute()
-    )
-    
-    return render_template(
-        "profile.html", 
-        user=user_record.data, 
-        departments=dept_response.data
-    )
+# ==================== APIs & General Routes ====================
 
-@app.route("/forget_password", methods=["GET", "POST"])
-def forget_password():
-    if request.method == "POST":
-        try:
-            supabase.auth.reset_password_for_email(request.form["email"].strip().lower())
-            flash("Password reset email sent.", "success")
-        except Exception as e:
-            flash("Unable to send reset email. Please try again.", "error")
-            
-        return redirect(url_for("forget_password"))
-        
-    return render_template("forget_password.html")
+@app.route("/venue", methods=['GET'])
+def venue():
+    locations = db.fetch_all("SELECT * FROM location ORDER BY name ASC")
+    types = db.fetch_all("SELECT * FROM venue_type ORDER BY type_name ASC")
+    facilities = db.fetch_all("SELECT * FROM facilities ORDER BY f_name ASC")
+    return render_template("venue.html", locations=locations, venue_types=types, facilities=facilities)
 
-@app.route("/calendar-redirect")
-def calendar_redirect():
-    # If not logged in, send them to the homepage calendar
-    if "user" not in session:
-        return redirect("/#calendar-section")
-        
-    role = session.get("role", "student")
-    
-    # Staff go to their respective dashboards
-    if role.startswith("hod"):
-        return redirect(url_for("hod_dashboard"))
-    elif role == "pro":
-        return redirect(url_for("pro_dashboard"))
-    elif role == "admin":
-        return redirect(url_for("admin_dashboard"))
-    else:
-        # Students/Normal users go to the homepage calendar
-        return redirect("/#calendar-section")
+
+@app.route('/api/calendar-events', methods=['GET'])
+def get_calendar_events():
+    try:
+        events = db.fetch_all("SELECT * FROM events_view")
+        formatted = []
+        for i in events:
+            formatted.append({
+                'id': str(i['id']),
+                'title': f"{i['title']} ({i['venue_name']})",
+                'start': str(i['start_time']),
+                'end': str(i['end_time']),
+                'backgroundColor': '#2563eb',
+                'borderColor': '#1d4ed8'
+            })
+        return jsonify(formatted), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/event-types', methods=['GET'])
+def get_event_types():
+    try:
+        types = db.fetch_all("SELECT id, event_type_name AS name FROM event_types ORDER BY event_type_name ASC")
+        return jsonify(types), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/clubs', methods=['GET'])
+def get_clubs():
+    clubs = db.fetch_all("SELECT id, name FROM clubs ORDER BY name ASC")
+    return jsonify(clubs), 200
+
+
+@app.route('/api/venues', methods=['GET'])
+def get_venues():
+    venues = db.fetch_all("SELECT id, name FROM venues WHERE is_active = true ORDER BY name ASC")
+    return jsonify(venues), 200
+
+
+@app.route('/api/facilities/all', methods=['GET'])
+def get_all_facilities():
+    try:
+        facilities = db.fetch_all("SELECT id, f_name as name FROM facilities ORDER BY f_name ASC")
+        return jsonify(facilities), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/facilities/<venue_id>', methods=['GET'])
+def get_facilities_for_venue(venue_id):
+    try:
+        facilities = db.fetch_all(
+            """
+            SELECT vf.quantity, f.id, f.f_name as name 
+            FROM venue_facilities vf 
+            JOIN facilities f ON vf.facility_id = f.id 
+            WHERE vf.venue_id = %s
+            """,
+            (venue_id,)
+        )
+        return jsonify(facilities), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(
         host=os.getenv("APP_HOST", "127.0.0.1"),
         port=int(os.getenv("APP_PORT", 5000)),
-        debug=(os.getenv("APP_ENV") == "development"),
-        use_reloader=(os.getenv("APP_ENV") == "development"),
-        threaded=True
+        debug=(os.getenv("APP_ENV") == "development")
     )
